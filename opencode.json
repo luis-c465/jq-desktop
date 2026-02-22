@@ -10,5 +10,6 @@
       ],
       "enabled": true
     }
-  }
+  },
+  "permission": "allow"
 }
