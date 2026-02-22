@@ -1,12 +1,11 @@
-import { Badge } from "~/components/ui/badge";
 import {
   ResizableHandle,
   ResizablePanel,
   ResizablePanelGroup,
 } from "~/components/ui/resizable";
-import { ScrollArea } from "~/components/ui/scroll-area";
 import { Separator } from "~/components/ui/separator";
 import { LoadingOverlay } from "~/components/LoadingOverlay";
+import { JsonTreeViewer } from "~/components/json-tree/JsonTreeViewer";
 import { useFileState } from "~/hooks/useFileState";
 
 import { StatusBar } from "./StatusBar";
@@ -15,12 +14,8 @@ import { Toolbar } from "./Toolbar";
 function PlaceholderPanel({ title, description }: { title: string; description: string }) {
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <div className="flex items-center gap-2 border-b px-3 py-2">
-        <Badge variant="outline">{title}</Badge>
-      </div>
-      <ScrollArea className="h-full">
-        <div className="p-4 text-sm text-muted-foreground">{description}</div>
-      </ScrollArea>
+      <div className="border-b px-3 py-2 text-xs text-muted-foreground">{title}</div>
+      <div className="p-4 text-sm text-muted-foreground">{description}</div>
     </div>
   );
 }
@@ -52,14 +47,7 @@ export function AppShell() {
       <div className="relative min-h-0 flex-1">
         <ResizablePanelGroup orientation="horizontal">
           <ResizablePanel defaultSize={50} minSize={20}>
-            <PlaceholderPanel
-              title="JSON Tree"
-              description={
-                rootNodes.length > 0
-                  ? `Loaded root nodes: ${rootNodes.length}`
-                  : "Open a file to inspect and lazily browse JSON nodes."
-              }
-            />
+            <JsonTreeViewer rootNodes={rootNodes} fileName={fileInfo?.fileName} />
           </ResizablePanel>
 
           <ResizableHandle withHandle />
