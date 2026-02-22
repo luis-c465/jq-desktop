@@ -20,10 +20,15 @@ type ViewportSize = {
   height: number;
 };
 
-function useViewportSize(containerRef: RefObject<HTMLDivElement | null>): ViewportSize {
+function useViewportSize(containerRef: RefObject<HTMLDivElement | null>, enabled: boolean): ViewportSize {
   const [size, setSize] = useState<ViewportSize>({ width: 0, height: 0 });
 
   useEffect(() => {
+    if (!enabled) {
+      setSize({ width: 0, height: 0 });
+      return;
+    }
+
     const container = containerRef.current;
     if (!container) {
       return;
@@ -41,7 +46,7 @@ function useViewportSize(containerRef: RefObject<HTMLDivElement | null>): Viewpo
     return () => {
       observer.disconnect();
     };
-  }, [containerRef]);
+  }, [containerRef, enabled]);
 
   return size;
 }
@@ -49,7 +54,8 @@ function useViewportSize(containerRef: RefObject<HTMLDivElement | null>): Viewpo
 export function JsonTreeViewer({ rootNodes, fileName, onOpenFile }: JsonTreeViewerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const nodes = rootNodes ?? [];
-  const { width, height } = useViewportSize(containerRef);
+  const hasData = nodes.length > 0;
+  const { width, height } = useViewportSize(containerRef, hasData);
   const { treeData, loadingNodeIds, loadChildren, activateNode } = useTreeData(nodes);
 
   const renderNode = useMemo(
@@ -74,8 +80,6 @@ export function JsonTreeViewer({ rootNodes, fileName, onOpenFile }: JsonTreeView
     [activateNode],
   );
 
-  const hasData = nodes.length > 0;
-
   return (
     <div className="flex h-full min-h-0 flex-col">
       <div className="flex items-center justify-between border-b px-3 py-2 text-xs text-muted-foreground">
@@ -84,7 +88,7 @@ export function JsonTreeViewer({ rootNodes, fileName, onOpenFile }: JsonTreeView
       </div>
 
       {!hasData ? (
-        <div className="flex h-full flex-col items-center justify-center gap-2 p-4 text-sm text-muted-foreground">
+        <div className="flex flex-1 flex-col items-center justify-center gap-2 p-4 text-sm text-muted-foreground">
           <FileJson className="size-10" />
           <p>Open a JSON file to explore</p>
           {onOpenFile ? (
@@ -98,7 +102,7 @@ export function JsonTreeViewer({ rootNodes, fileName, onOpenFile }: JsonTreeView
           ) : null}
         </div>
       ) : (
-        <div ref={containerRef} className="h-full min-h-0 w-full">
+        <div ref={containerRef} className="flex-1 min-h-0 w-full">
           {width > 0 && height > 0 ? (
             <Tree<TreeNode>
               data={treeData}
