@@ -1744,17 +1744,6 @@ checksum = "92ecc6618181def0457392ccd0ee51198e065e016d1d527a7ac1b6dc7c1f09d2"
 
 [[package]]
 name = "jaq-core"
-version = "2.2.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "77526a72eb79412c29fd141767a6549bbfcb1cb40e00556fe16532d5e878e098"
-dependencies = [
- "dyn-clone",
- "once_cell",
- "typed-arena",
-]
-
-[[package]]
-name = "jaq-core"
 version = "3.0.0-beta"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9f8be1f6e12cf2b24aa2a30680104403650a5e6aac8e0a9fc1195879366b8919"
@@ -1775,28 +1764,12 @@ dependencies = [
  "foldhash",
  "hifijson",
  "indexmap 2.13.0",
- "jaq-core 3.0.0-beta",
- "jaq-std 3.0.0-beta",
+ "jaq-core",
+ "jaq-std",
  "num-bigint",
  "num-traits",
  "ryu",
  "self_cell",
-]
-
-[[package]]
-name = "jaq-std"
-version = "2.1.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2c264fe397c981705976c71f1bfe020382b9eda52ae950e57fe885e147bdd67d"
-dependencies = [
- "aho-corasick",
- "base64 0.22.1",
- "chrono",
- "jaq-core 2.2.1",
- "libm",
- "log",
- "regex-lite",
- "urlencoding",
 ]
 
 [[package]]
@@ -1808,7 +1781,7 @@ dependencies = [
  "aho-corasick",
  "base64 0.22.1",
  "bstr",
- "jaq-core 3.0.0-beta",
+ "jaq-core",
  "jiff",
  "libm",
  "log",
@@ -1906,9 +1879,9 @@ checksum = "8eaf4bc02d17cbdd7ff4c7438cafcdf7fb9a4613313ad11b4f8fefe7d3fa0130"
 name = "jq-desktop"
 version = "0.1.0"
 dependencies = [
- "jaq-core 2.2.1",
+ "jaq-core",
  "jaq-json",
- "jaq-std 2.1.2",
+ "jaq-std",
  "serde",
  "serde_json",
  "tauri",
@@ -3083,12 +3056,6 @@ name = "regex-bites"
 version = "0.1.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b6a15a2fa0bfda9361941c45550896ae87b15cc6c8c939ea350079670332e211"
-
-[[package]]
-name = "regex-lite"
-version = "0.1.9"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cab834c73d247e67f4fae452806d17d3c7501756d98c8808d7c9c7aa7d18f973"
 
 [[package]]
 name = "regex-syntax"
