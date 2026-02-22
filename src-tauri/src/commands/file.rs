@@ -12,7 +12,7 @@ const READ_CHUNK_SIZE: usize = 64 * 1024;
 const PROGRESS_EMIT_EVERY_BYTES: u64 = 1024 * 1024;
 
 #[derive(Debug, Clone, Serialize)]
-#[serde(tag = "type")]
+#[serde(tag = "type", rename_all_fields = "camelCase")]
 pub enum LoadProgress {
     Reading { bytes_read: u64, total_bytes: u64 },
     Parsing,
