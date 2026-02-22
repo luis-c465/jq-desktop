@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { Toaster } from "sonner";
 
+import { ErrorBoundary } from "~/components/ErrorBoundary";
 import { AppShell } from "~/components/layout/AppShell";
 
 function App() {
@@ -9,10 +10,10 @@ function App() {
   }, []);
 
   return (
-    <>
+    <ErrorBoundary>
       <AppShell />
       <Toaster richColors theme="dark" position="bottom-right" />
-    </>
+    </ErrorBoundary>
   );
 }
 

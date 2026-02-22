@@ -28,6 +28,7 @@ export type UseQueryExecutionReturn = {
   setQuery: (query: string) => void;
   executeQuery: () => Promise<void>;
   cancelExecution: () => Promise<void>;
+  reset: () => void;
 };
 
 function getErrorMessage(error: unknown, fallback: string): string {
@@ -53,7 +54,7 @@ function handleQueryResult(
       break;
     }
     case "Result": {
-      setResults((current) => [...current, message]);
+      setResults((current: QueryResultItem[]) => [...current, message]);
       setResultCount(message.index + 1);
       break;
     }
@@ -166,6 +167,23 @@ export function useQueryExecution(hasFileLoaded: boolean): UseQueryExecutionRetu
     }
   }, []);
 
+  const reset = useCallback(() => {
+    setQueryState("");
+    setIsValid(null);
+    setValidationError(null);
+    setIsRunning(false);
+    setResults([]);
+    setResultCount(0);
+    setElapsedMs(null);
+    setError(null);
+  }, []);
+
+  useEffect(() => {
+    if (!hasFileLoaded) {
+      reset();
+    }
+  }, [hasFileLoaded, reset]);
+
   return {
     query,
     isValid,
@@ -178,5 +196,6 @@ export function useQueryExecution(hasFileLoaded: boolean): UseQueryExecutionRetu
     setQuery,
     executeQuery,
     cancelExecution,
+    reset,
   };
 }

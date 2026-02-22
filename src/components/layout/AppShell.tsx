@@ -36,7 +36,13 @@ export function AppShell() {
           void openFile();
         }}
         onCloseFile={() => {
-          void closeFile();
+          void (async () => {
+            if (queryExecution.isRunning) {
+              await queryExecution.cancelExecution();
+            }
+            queryExecution.reset();
+            await closeFile();
+          })();
         }}
       />
 
