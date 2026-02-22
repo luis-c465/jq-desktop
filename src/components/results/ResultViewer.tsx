@@ -1,4 +1,4 @@
-import { Code2, Copy, List, Loader2 } from "lucide-react";
+import { AlertCircle, Code2, Copy, List, Loader2, Search } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
@@ -105,14 +105,19 @@ export function ResultViewer({
       </div>
 
       {error ? (
-        <div className="m-3 rounded-md border border-destructive/40 bg-destructive/10 p-3 font-mono text-xs text-destructive">
-          {error}
+        <div className="m-3 flex items-start gap-2 rounded-md border border-destructive/40 bg-destructive/10 p-3 text-destructive">
+          <AlertCircle className="mt-0.5 size-4 shrink-0" />
+          <div className="min-w-0">
+            <p className="text-xs font-medium">Query failed</p>
+            <p className="font-mono text-xs break-all">{error}</p>
+          </div>
         </div>
       ) : null}
 
       {!error && results.length === 0 && !isRunning ? (
-        <div className="flex min-h-0 flex-1 items-center justify-center px-4 text-sm text-muted-foreground">
-          Run a jq query to see results
+        <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-2 px-4 text-sm text-muted-foreground">
+          <Search className="size-8" />
+          <p>Run a jq query to see results</p>
         </div>
       ) : null}
 

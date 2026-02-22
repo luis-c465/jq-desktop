@@ -81,6 +81,12 @@ pub fn get_file_info(state: tauri::State<'_, AppState>) -> Result<FileInfo, Stri
     })
 }
 
+#[tauri::command]
+pub fn get_file_size(path: String) -> Result<u64, String> {
+    let metadata = std::fs::metadata(path).map_err(|error| AppError::from(error).to_string())?;
+    Ok(metadata.len())
+}
+
 async fn load_file_impl(
     path: &str,
     on_progress: &Channel<LoadProgress>,

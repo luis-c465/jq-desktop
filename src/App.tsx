@@ -7,6 +7,15 @@ import { AppShell } from "~/components/layout/AppShell";
 function App() {
   useEffect(() => {
     document.documentElement.classList.add("dark");
+
+    const disableContextMenu = (event: MouseEvent) => {
+      event.preventDefault();
+    };
+
+    window.addEventListener("contextmenu", disableContextMenu);
+    return () => {
+      window.removeEventListener("contextmenu", disableContextMenu);
+    };
   }, []);
 
   return (

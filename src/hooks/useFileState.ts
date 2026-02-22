@@ -10,6 +10,12 @@ type ProgressUpdate = {
   status: string;
 };
 
+const LARGE_FILE_WARNING_BYTES = 500 * 1024 * 1024;
+
+function formatMegabytes(bytes: number): string {
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
 export function useFileState() {
   const [fileInfo, setFileInfo] = useState<FileInfo | null>(null);
   const [rootNodes, setRootNodes] = useState<TreeNodeInfo[]>([]);
@@ -32,6 +38,17 @@ export function useFileState() {
     const path = Array.isArray(selected) ? selected[0] : selected;
     if (!path) {
       return;
+    }
+
+    try {
+      const size = await tauriCommands.getFileSize(path);
+      if (size > LARGE_FILE_WARNING_BYTES) {
+        toast.warning(`Large file (${formatMegabytes(size)}). Loading may take a while.`, {
+          duration: 3000,
+        });
+      }
+    } catch {
+      // Best-effort warning check.
     }
 
     let didReceiveChannelError = false;
@@ -75,7 +92,7 @@ export function useFileState() {
             didReceiveChannelError = true;
             setError(progressMessage.message);
             setLoadStatus("Load failed");
-            toast.error(progressMessage.message);
+            toast.error(progressMessage.message, { duration: 3000 });
             break;
           }
           default: {
@@ -88,7 +105,7 @@ export function useFileState() {
         const message = error instanceof Error ? error.message : "Failed to load file";
         setError(message);
         setLoadStatus("Load failed");
-        toast.error(message);
+        toast.error(message, { duration: 3000 });
       }
     } finally {
       setIsLoading(false);
@@ -107,7 +124,7 @@ export function useFileState() {
     } catch (error) {
       const message = error instanceof Error ? error.message : "Failed to close file";
       setError(message);
-      toast.error(message);
+      toast.error(message, { duration: 3000 });
     }
   }, []);
 

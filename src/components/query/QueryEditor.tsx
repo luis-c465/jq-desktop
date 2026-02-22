@@ -1,8 +1,9 @@
 import { Loader2, Play, Square } from "lucide-react";
-import type { ChangeEvent, KeyboardEvent } from "react";
+import type { ChangeEvent, KeyboardEvent, RefObject } from "react";
 
 import { Button } from "~/components/ui/button";
 import { Textarea } from "~/components/ui/textarea";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "~/components/ui/tooltip";
 import { cn } from "~/lib/utils";
 
 import type { UseQueryExecutionReturn } from "./useQueryExecution";
@@ -10,6 +11,7 @@ import type { UseQueryExecutionReturn } from "./useQueryExecution";
 type QueryEditorProps = {
   hasFileLoaded: boolean;
   queryExecution: UseQueryExecutionReturn;
+  textareaRef?: RefObject<HTMLTextAreaElement | null>;
 };
 
 function getStatusText(
@@ -38,7 +40,11 @@ function getStatusText(
   return "Press Ctrl+Enter to run";
 }
 
-export function QueryEditor({ hasFileLoaded, queryExecution }: QueryEditorProps) {
+export function QueryEditor({
+  hasFileLoaded,
+  queryExecution,
+  textareaRef,
+}: QueryEditorProps) {
   const {
     query,
     isValid,
@@ -60,6 +66,7 @@ export function QueryEditor({ hasFileLoaded, queryExecution }: QueryEditorProps)
       <div className="border-b px-3 py-2 text-xs text-muted-foreground">Query Editor</div>
       <div className="flex min-h-0 flex-1 flex-col gap-3 p-3">
         <Textarea
+          ref={textareaRef}
           value={query}
           onChange={(event: ChangeEvent<HTMLTextAreaElement>) => {
             setQuery(event.target.value);
@@ -76,14 +83,20 @@ export function QueryEditor({ hasFileLoaded, queryExecution }: QueryEditorProps)
             }
           }}
           rows={4}
+          disabled={!hasFileLoaded}
           className={cn(
             "font-mono text-xs",
+            !hasFileLoaded && "cursor-not-allowed opacity-70",
             isValid === true &&
               "border-green-500 focus-visible:border-green-500 focus-visible:ring-green-500/30",
             isValid === false &&
               "border-destructive focus-visible:border-destructive focus-visible:ring-destructive/30",
           )}
-          placeholder="Type a jq expression... (e.g., .users[] | select(.age > 30))"
+          placeholder={
+            hasFileLoaded
+              ? "Type a jq expression... (e.g., .users[] | select(.age > 30))"
+              : "Load a file first"
+          }
         />
 
         {validationError ? (
@@ -91,16 +104,23 @@ export function QueryEditor({ hasFileLoaded, queryExecution }: QueryEditorProps)
         ) : null}
 
         <div className="flex items-center gap-2">
-          <Button
-            size="sm"
-            onClick={() => {
-              void executeQuery();
-            }}
-            disabled={runDisabled}
-          >
-            <Play className="size-3.5" />
-            Run
-          </Button>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  size="sm"
+                  onClick={() => {
+                    void executeQuery();
+                  }}
+                  disabled={runDisabled}
+                >
+                  <Play className="size-3.5" />
+                  Run
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">Execute query (Ctrl+Enter)</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
 
           {isRunning ? (
             <Button

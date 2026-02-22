@@ -16,6 +16,7 @@ pub fn run() {
             commands::file::load_file,
             commands::file::close_file,
             commands::file::get_file_info,
+            commands::file::get_file_size,
             commands::tree::expand_node,
             commands::tree::get_node_value,
             commands::query::run_jq_query,

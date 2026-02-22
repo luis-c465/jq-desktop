@@ -51,3 +51,7 @@ export async function cancelQuery(): Promise<void> {
 export async function closeFile(): Promise<void> {
   await invoke("close_file");
 }
+
+export async function getFileSize(path: string): Promise<number> {
+  return invoke<number>("get_file_size", { path });
+}

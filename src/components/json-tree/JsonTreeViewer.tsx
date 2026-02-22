@@ -2,6 +2,7 @@ import { FileJson } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState, type RefObject } from "react";
 import { Tree, type NodeApi, type NodeRendererProps } from "react-arborist";
 
+import { Button } from "~/components/ui/button";
 import type { TreeNodeInfo } from "~/types";
 
 import { JsonTreeNode } from "./JsonTreeNode";
@@ -11,6 +12,7 @@ import type { TreeNode } from "./tree-utils";
 type JsonTreeViewerProps = {
   rootNodes: TreeNodeInfo[];
   fileName?: string;
+  onOpenFile?: () => void;
 };
 
 type ViewportSize = {
@@ -44,7 +46,7 @@ function useViewportSize(containerRef: RefObject<HTMLDivElement | null>): Viewpo
   return size;
 }
 
-export function JsonTreeViewer({ rootNodes, fileName }: JsonTreeViewerProps) {
+export function JsonTreeViewer({ rootNodes, fileName, onOpenFile }: JsonTreeViewerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const { width, height } = useViewportSize(containerRef);
   const { treeData, loadingNodeIds, loadChildren, activateNode } = useTreeData(rootNodes);
@@ -82,8 +84,17 @@ export function JsonTreeViewer({ rootNodes, fileName }: JsonTreeViewerProps) {
 
       {!hasData ? (
         <div className="flex h-full flex-col items-center justify-center gap-2 p-4 text-sm text-muted-foreground">
-          <FileJson className="size-8" />
+          <FileJson className="size-10" />
           <p>Open a JSON file to explore</p>
+          {onOpenFile ? (
+            <Button
+              size="sm"
+              onClick={onOpenFile}
+              className="mt-2"
+            >
+              Open File
+            </Button>
+          ) : null}
         </div>
       ) : (
         <div ref={containerRef} className="h-full min-h-0 w-full">

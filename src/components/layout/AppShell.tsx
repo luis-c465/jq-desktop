@@ -1,3 +1,5 @@
+import { useCallback, useRef } from "react";
+
 import {
   ResizableHandle,
   ResizablePanel,
@@ -10,6 +12,7 @@ import { QueryEditor } from "~/components/query/QueryEditor";
 import { useQueryExecution } from "~/components/query/useQueryExecution";
 import { ResultViewer } from "~/components/results/ResultViewer";
 import { useFileState } from "~/hooks/useFileState";
+import { useKeyboardShortcuts } from "~/hooks/useKeyboardShortcuts";
 
 import { StatusBar } from "./StatusBar";
 import { Toolbar } from "./Toolbar";
@@ -26,30 +29,54 @@ export function AppShell() {
   } = useFileState();
   const hasFileLoaded = Boolean(fileInfo?.loaded);
   const queryExecution = useQueryExecution(hasFileLoaded);
+  const queryEditorRef = useRef<HTMLTextAreaElement | null>(null);
+
+  const handleOpenFile = useCallback(() => {
+    void openFile();
+  }, [openFile]);
+
+  const handleCloseFile = useCallback(() => {
+    void (async () => {
+      if (queryExecution.isRunning) {
+        await queryExecution.cancelExecution();
+      }
+      queryExecution.reset();
+      await closeFile();
+    })();
+  }, [closeFile, queryExecution]);
+
+  useKeyboardShortcuts({
+    onOpenFile: handleOpenFile,
+    onCloseFile: handleCloseFile,
+    onExecuteQuery: () => {
+      void queryExecution.executeQuery();
+    },
+    onCancelQuery: () => {
+      void queryExecution.cancelExecution();
+    },
+    focusQueryEditor: () => {
+      queryEditorRef.current?.focus();
+    },
+    isQueryRunning: queryExecution.isRunning,
+  });
 
   return (
     <div className="flex h-screen flex-col bg-background text-foreground">
       <Toolbar
         fileInfo={fileInfo}
         isLoading={isLoading}
-        onOpenFile={() => {
-          void openFile();
-        }}
-        onCloseFile={() => {
-          void (async () => {
-            if (queryExecution.isRunning) {
-              await queryExecution.cancelExecution();
-            }
-            queryExecution.reset();
-            await closeFile();
-          })();
-        }}
+        onOpenFile={handleOpenFile}
+        onCloseFile={handleCloseFile}
       />
 
       <div className="relative min-h-0 flex-1">
         <ResizablePanelGroup orientation="horizontal">
           <ResizablePanel defaultSize={50} minSize={20}>
-            <JsonTreeViewer rootNodes={rootNodes} fileName={fileInfo?.fileName} />
+            <JsonTreeViewer
+              rootNodes={rootNodes}
+              fileName={fileInfo?.fileName}
+              onOpenFile={handleOpenFile}
+            />
           </ResizablePanel>
 
           <ResizableHandle withHandle />
@@ -60,6 +87,7 @@ export function AppShell() {
                 <QueryEditor
                   hasFileLoaded={hasFileLoaded}
                   queryExecution={queryExecution}
+                  textareaRef={queryEditorRef}
                 />
               </ResizablePanel>
 

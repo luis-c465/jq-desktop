@@ -2,6 +2,7 @@ import { FileJson, X } from "lucide-react";
 
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "~/components/ui/tooltip";
 import type { FileInfo } from "~/types";
 
 type ToolbarProps = {
@@ -36,10 +37,17 @@ export function Toolbar({
 }: ToolbarProps) {
   return (
     <header className="flex items-center gap-3 border-b px-4 py-2">
-      <Button onClick={onOpenFile} disabled={isLoading}>
-        <FileJson className="size-4" />
-        Open File
-      </Button>
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button onClick={onOpenFile} disabled={isLoading}>
+              <FileJson className="size-4" />
+              Open File
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="bottom">Open JSON file (Ctrl+O)</TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
 
       <div className="flex min-w-0 items-center gap-2 text-sm">
         <span className="truncate text-muted-foreground">
@@ -51,15 +59,22 @@ export function Toolbar({
       </div>
 
       <div className="ml-auto">
-        <Button
-          variant="ghost"
-          size="sm"
-          disabled={!fileInfo || isLoading}
-          onClick={onCloseFile}
-        >
-          <X className="size-4" />
-          Close
-        </Button>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                disabled={!fileInfo || isLoading}
+                onClick={onCloseFile}
+              >
+                <X className="size-4" />
+                Close
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom">Close file (Ctrl+W)</TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       </div>
     </header>
   );
