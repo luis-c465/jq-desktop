@@ -1,1 +1,1 @@
-// Tauri command modules are defined here.
+pub mod file;
