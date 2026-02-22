@@ -76,7 +76,7 @@ export function useFileState() {
             break;
           }
           case "Complete": {
-            setRootNodes(progressMessage.rootNodes);
+            setRootNodes(progressMessage.rootNodes ?? []);
             setFileInfo({
               fileName: progressMessage.fileName,
               filePath: path,

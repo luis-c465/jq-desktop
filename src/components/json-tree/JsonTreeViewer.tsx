@@ -10,7 +10,7 @@ import { useTreeData } from "./useTreeData";
 import type { TreeNode } from "./tree-utils";
 
 type JsonTreeViewerProps = {
-  rootNodes: TreeNodeInfo[];
+  rootNodes: TreeNodeInfo[] | null | undefined;
   fileName?: string;
   onOpenFile?: () => void;
 };
@@ -48,8 +48,9 @@ function useViewportSize(containerRef: RefObject<HTMLDivElement | null>): Viewpo
 
 export function JsonTreeViewer({ rootNodes, fileName, onOpenFile }: JsonTreeViewerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const nodes = rootNodes ?? [];
   const { width, height } = useViewportSize(containerRef);
-  const { treeData, loadingNodeIds, loadChildren, activateNode } = useTreeData(rootNodes);
+  const { treeData, loadingNodeIds, loadChildren, activateNode } = useTreeData(nodes);
 
   const renderNode = useMemo(
     () =>
@@ -73,13 +74,13 @@ export function JsonTreeViewer({ rootNodes, fileName, onOpenFile }: JsonTreeView
     [activateNode],
   );
 
-  const hasData = rootNodes.length > 0;
+  const hasData = nodes.length > 0;
 
   return (
     <div className="flex h-full min-h-0 flex-col">
       <div className="flex items-center justify-between border-b px-3 py-2 text-xs text-muted-foreground">
         <span className="truncate">{fileName ?? "No file loaded"}</span>
-        <span>{rootNodes.length} root nodes</span>
+        <span>{nodes.length} root nodes</span>
       </div>
 
       {!hasData ? (
