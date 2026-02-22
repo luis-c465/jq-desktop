@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { expandNode } from "~/services/tauri-commands";
 import type { TreeNodeInfo } from "~/types";
@@ -69,21 +69,27 @@ type UseTreeDataResult = {
 export function useTreeData(rootNodes: TreeNodeInfo[]): UseTreeDataResult {
   const [treeData, setTreeData] = useState<TreeNode[]>(() => batchConvert(rootNodes));
   const [loadingNodeIds, setLoadingNodeIds] = useState<Set<string>>(() => new Set());
+  const treeDataRef = useRef(treeData);
+  const loadingNodeIdsRef = useRef(loadingNodeIds);
 
   useEffect(() => {
-    setTreeData(batchConvert(rootNodes));
+    const nextTreeData = batchConvert(rootNodes);
+    treeDataRef.current = nextTreeData;
+    loadingNodeIdsRef.current = new Set();
+    setTreeData(nextTreeData);
     setLoadingNodeIds(new Set());
   }, [rootNodes]);
 
   const loadChildrenBatch = useCallback(
     async (nodeId: string, offset: number, append: boolean) => {
-      if (loadingNodeIds.has(nodeId)) {
+      if (loadingNodeIdsRef.current.has(nodeId)) {
         return;
       }
 
       setLoadingNodeIds((prev) => {
         const next = new Set(prev);
         next.add(nodeId);
+        loadingNodeIdsRef.current = next;
         return next;
       });
 
@@ -94,46 +100,49 @@ export function useTreeData(rootNodes: TreeNodeInfo[]): UseTreeDataResult {
           ? [...loadedChildren, createLoadMoreNode(nodeId, result.offset + loadedChildren.length, result.totalChildren)]
           : loadedChildren;
 
-        setTreeData((prev) =>
-          updateNode(prev, nodeId, (node) => {
+        setTreeData((prev) => {
+          const nextTree = updateNode(prev, nodeId, (node) => {
             if (!append || !Array.isArray(node.children)) {
-              return { ...node, children: withPagination };
+              return { ...node, children: withPagination, childrenLoaded: true };
             }
 
             const existing = node.children.filter((child) => !isLoadMoreNode(child));
-            return { ...node, children: [...existing, ...withPagination] };
-          }),
-        );
+            return { ...node, children: [...existing, ...withPagination], childrenLoaded: true };
+          });
+          treeDataRef.current = nextTree;
+          return nextTree;
+        });
       } finally {
         setLoadingNodeIds((prev) => {
           const next = new Set(prev);
           next.delete(nodeId);
+          loadingNodeIdsRef.current = next;
           return next;
         });
       }
     },
-    [loadingNodeIds],
+    [],
   );
 
   const loadChildren = useCallback(
     async (nodeId: string) => {
-      const node = findNode(treeData, nodeId);
+      const node = findNode(treeDataRef.current, nodeId);
       if (!node || isLoadMoreNode(node)) {
         return;
       }
 
-      if (Array.isArray(node.children)) {
+      if (node.childrenLoaded) {
         return;
       }
 
       await loadChildrenBatch(nodeId, 0, false);
     },
-    [loadChildrenBatch, treeData],
+    [loadChildrenBatch],
   );
 
   const activateNode = useCallback(
     async (nodeId: string) => {
-      const node = findNode(treeData, nodeId);
+      const node = findNode(treeDataRef.current, nodeId);
       if (!node) {
         return;
       }
@@ -142,7 +151,7 @@ export function useTreeData(rootNodes: TreeNodeInfo[]): UseTreeDataResult {
         await loadChildrenBatch(node.parentId, node.nextOffset, true);
       }
     },
-    [loadChildrenBatch, treeData],
+    [loadChildrenBatch],
   );
 
   return useMemo(

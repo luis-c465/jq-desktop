@@ -5,7 +5,8 @@ export const TREE_PAGE_SIZE = 500;
 export type TreeNode = {
   id: string;
   name: string;
-  children?: TreeNode[] | null;
+  children?: TreeNode[];
+  childrenLoaded?: boolean;
   data: TreeNodeInfo;
   kind?: "node" | "load-more";
   parentId?: string;
@@ -21,7 +22,8 @@ export function treeNodeInfoToTreeNode(info: TreeNodeInfo): TreeNode {
   return {
     id: info.id,
     name: info.key,
-    children: info.hasChildren ? null : undefined,
+    children: info.hasChildren ? [] : undefined,
+    childrenLoaded: !info.hasChildren,
     data: info,
     kind: "node",
   };
