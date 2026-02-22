@@ -3,67 +3,16 @@ import {
   ResizablePanel,
   ResizablePanelGroup,
 } from "~/components/ui/resizable";
-import { ScrollArea } from "~/components/ui/scroll-area";
 import { Separator } from "~/components/ui/separator";
 import { LoadingOverlay } from "~/components/LoadingOverlay";
 import { JsonTreeViewer } from "~/components/json-tree/JsonTreeViewer";
 import { QueryEditor } from "~/components/query/QueryEditor";
-import {
-  useQueryExecution,
-  type QueryResultItem,
-} from "~/components/query/useQueryExecution";
+import { useQueryExecution } from "~/components/query/useQueryExecution";
+import { ResultViewer } from "~/components/results/ResultViewer";
 import { useFileState } from "~/hooks/useFileState";
 
 import { StatusBar } from "./StatusBar";
 import { Toolbar } from "./Toolbar";
-
-type ResultsPanelProps = {
-  hasFileLoaded: boolean;
-  isRunning: boolean;
-  error: string | null;
-  results: QueryResultItem[];
-};
-
-function ResultsPanel({ hasFileLoaded, isRunning, error, results }: ResultsPanelProps) {
-  const hasResults = results.length > 0;
-
-  return (
-    <div className="flex h-full min-h-0 flex-col">
-      <div className="border-b px-3 py-2 text-xs text-muted-foreground">Results</div>
-
-      {!hasFileLoaded ? (
-        <div className="p-4 text-sm text-muted-foreground">
-          Open a JSON file, run a jq query, and streamed results will appear here.
-        </div>
-      ) : null}
-
-      {hasFileLoaded && !hasResults && !isRunning && !error ? (
-        <div className="p-4 text-sm text-muted-foreground">No results yet.</div>
-      ) : null}
-
-      {hasFileLoaded && isRunning && !hasResults ? (
-        <div className="p-4 text-sm text-muted-foreground">Waiting for results...</div>
-      ) : null}
-
-      {error ? <div className="p-4 text-sm text-destructive">{error}</div> : null}
-
-      {hasResults ? (
-        <ScrollArea className="min-h-0 flex-1">
-          <div className="space-y-2 p-3 font-mono text-xs">
-            {results.map((result) => (
-              <div key={result.index} className="rounded border bg-card p-2">
-                <div className="mb-1 text-[10px] uppercase text-muted-foreground">
-                  #{result.index} {result.valueType}
-                </div>
-                <pre className="overflow-x-auto whitespace-pre-wrap break-all">{result.value}</pre>
-              </div>
-            ))}
-          </div>
-        </ScrollArea>
-      ) : null}
-    </div>
-  );
-}
 
 export function AppShell() {
   const {
@@ -111,11 +60,12 @@ export function AppShell() {
               <ResizableHandle withHandle />
 
               <ResizablePanel defaultSize={80} minSize={25}>
-                <ResultsPanel
-                  hasFileLoaded={hasFileLoaded}
+                <ResultViewer
                   isRunning={queryExecution.isRunning}
                   error={queryExecution.error}
                   results={queryExecution.results}
+                  resultCount={queryExecution.resultCount}
+                  elapsedMs={queryExecution.elapsedMs}
                 />
               </ResizablePanel>
             </ResizablePanelGroup>
