@@ -1,3 +1,4 @@
+use crate::error::AppError;
 use crate::jq_engine::JqEngine;
 use crate::state::AppState;
 use serde::Serialize;
@@ -33,6 +34,7 @@ pub async fn run_jq_query(
     on_result: Channel<QueryResult>,
     state: tauri::State<'_, AppState>,
 ) -> Result<(), String> {
+    state.reset_cancellation();
     let _ = on_result.send(QueryResult::Compiling);
 
     let input = {
@@ -68,6 +70,14 @@ pub async fn run_jq_query(
 
     let mut emitted = 0_usize;
     for output in outputs.into_iter().take(MAX_QUERY_RESULTS) {
+        if state.is_query_cancelled() {
+            let message = AppError::Cancelled.to_string();
+            let _ = on_result.send(QueryResult::Error {
+                message: message.clone(),
+            });
+            return Err(message);
+        }
+
         if started.elapsed() > QUERY_TIMEOUT {
             let message = format!("Query timed out after {} seconds", QUERY_TIMEOUT.as_secs());
             let _ = on_result.send(QueryResult::Error {
@@ -91,6 +101,12 @@ pub async fn run_jq_query(
         elapsed_ms: started.elapsed().as_millis() as u64,
     });
 
+    Ok(())
+}
+
+#[tauri::command]
+pub fn cancel_query(state: tauri::State<'_, AppState>) -> Result<(), String> {
+    state.cancel_query();
     Ok(())
 }
 

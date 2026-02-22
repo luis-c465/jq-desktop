@@ -16,12 +16,17 @@ impl Display for AppError {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::FileNotFound(path) => write!(f, "File not found: {path}"),
-            Self::ParseError(message) => write!(f, "Failed to parse JSON: {message}"),
-            Self::JqCompileError(message) => write!(f, "Failed to compile jq query: {message}"),
+            Self::ParseError(message) => write!(f, "Invalid JSON: {message}"),
+            Self::JqCompileError(message) => write!(f, "jq syntax error: {message}"),
             Self::JqRuntimeError(message) => write!(f, "jq runtime error: {message}"),
-            Self::Cancelled => write!(f, "Operation cancelled"),
-            Self::FileTooLarge(size) => write!(f, "File too large: {size} bytes"),
-            Self::NoFileLoaded => write!(f, "No file loaded"),
+            Self::Cancelled => write!(f, "Query cancelled"),
+            Self::FileTooLarge(size) => {
+                write!(
+                    f,
+                    "File is too large ({size} bytes). Maximum supported size is 4 GB."
+                )
+            }
+            Self::NoFileLoaded => write!(f, "No file loaded. Open a JSON file first."),
         }
     }
 }

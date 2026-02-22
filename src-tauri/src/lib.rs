@@ -19,7 +19,8 @@ pub fn run() {
             commands::tree::expand_node,
             commands::tree::get_node_value,
             commands::query::run_jq_query,
-            commands::query::validate_jq_query
+            commands::query::validate_jq_query,
+            commands::query::cancel_query
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
