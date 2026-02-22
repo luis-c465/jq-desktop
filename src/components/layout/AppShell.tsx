@@ -6,6 +6,7 @@ import {
 } from "~/components/ui/resizable";
 import { ScrollArea } from "~/components/ui/scroll-area";
 import { Separator } from "~/components/ui/separator";
+import { LoadingOverlay } from "~/components/LoadingOverlay";
 import { useFileState } from "~/hooks/useFileState";
 
 import { StatusBar } from "./StatusBar";
@@ -25,7 +26,15 @@ function PlaceholderPanel({ title, description }: { title: string; description: 
 }
 
 export function AppShell() {
-  const { fileInfo, rootNodes, isLoading, loadStatus, openFile, closeFile } = useFileState();
+  const {
+    fileInfo,
+    rootNodes,
+    isLoading,
+    loadProgress,
+    loadStatus,
+    openFile,
+    closeFile,
+  } = useFileState();
 
   return (
     <div className="flex h-screen flex-col bg-background text-foreground">
@@ -40,7 +49,7 @@ export function AppShell() {
         }}
       />
 
-      <div className="min-h-0 flex-1">
+      <div className="relative min-h-0 flex-1">
         <ResizablePanelGroup orientation="horizontal">
           <ResizablePanel defaultSize={50} minSize={20}>
             <PlaceholderPanel
@@ -75,10 +84,12 @@ export function AppShell() {
             </ResizablePanelGroup>
           </ResizablePanel>
         </ResizablePanelGroup>
+
+        <LoadingOverlay isVisible={isLoading} progress={loadProgress} status={loadStatus} />
       </div>
 
       <Separator />
-      <StatusBar fileInfo={fileInfo} loadStatus={isLoading ? "Loading..." : loadStatus} />
+      <StatusBar fileInfo={fileInfo} loadStatus={loadStatus} />
     </div>
   );
 }
