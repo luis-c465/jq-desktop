@@ -27,6 +27,18 @@ export async function getNodeValue(path: string): Promise<string> {
   return invoke<string>("get_node_value", { path });
 }
 
+export async function expandResultNode(
+  path: string,
+  offset?: number,
+  limit?: number,
+): Promise<ExpandResult> {
+  return invoke<ExpandResult>("expand_result_node", { path, offset, limit });
+}
+
+export async function getResultNodeValue(path: string): Promise<string> {
+  return invoke<string>("get_result_node_value", { path });
+}
+
 export async function runJqQuery(
   query: string,
   onResult: (result: QueryResult) => void,
