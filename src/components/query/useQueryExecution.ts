@@ -34,7 +34,21 @@ export type UseQueryExecutionReturn = {
 };
 
 function getErrorMessage(error: unknown, fallback: string): string {
+  if (typeof error === "string" && error) {
+    return error;
+  }
+
   if (error instanceof Error && error.message) {
+    return error.message;
+  }
+
+  if (
+    typeof error === "object" &&
+    error !== null &&
+    "message" in error &&
+    typeof error.message === "string" &&
+    error.message
+  ) {
     return error.message;
   }
 
@@ -146,7 +160,8 @@ export function useQueryExecution(hasFileLoaded: boolean): UseQueryExecutionRetu
       });
     } catch (runError) {
       setIsRunning(false);
-      setError(getErrorMessage(runError, "Failed to execute query"));
+      const message = getErrorMessage(runError, "Failed to execute query");
+      setError((current) => current ?? message);
     }
   }, [hasFileLoaded, isRunning, query]);
 

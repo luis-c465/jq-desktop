@@ -1,5 +1,5 @@
 use crate::error::AppError;
-use jaq_core::{data, load, Compiler, Ctx, Vars};
+use jaq_core::{data, load, val, Compiler, Ctx, Vars};
 use serde_json::Value;
 
 #[derive(Debug, Clone, PartialEq)]
@@ -34,7 +34,8 @@ impl JqEngine {
         let ctx = Ctx::<data::JustLut<jaq_json::Val>>::new(&filter.lut, Vars::new([]));
 
         for result in filter.id.run((ctx, input_value)) {
-            let value = result.map_err(|error| AppError::JqRuntimeError(format!("{error:?}")))?;
+            let value = val::unwrap_valr(result)
+                .map_err(|error| AppError::JqRuntimeError(error.to_string()))?;
             let output = JqOutput {
                 value_type: infer_value_type(&value),
                 value: value.to_string(),
@@ -58,20 +59,93 @@ fn build_filter(query: &str) -> Result<jaq_core::Filter<data::JustLut<jaq_json::
     let loader = load::Loader::new(jaq_std::defs().chain(jaq_json::defs()));
     let modules = loader
         .load(&arena, program)
-        .map_err(|errors| AppError::JqCompileError(format_error_items(errors)))?;
+        .map_err(|errors| AppError::JqCompileError(format_load_errors(errors)))?;
 
     Compiler::default()
         .with_funs(jaq_std::funs().chain(jaq_json::funs()))
         .compile(modules)
-        .map_err(|errors| AppError::JqCompileError(format_error_items(errors)))
+        .map_err(|errors| AppError::JqCompileError(format_compile_errors(errors)))
 }
 
-fn format_error_items<T: core::fmt::Debug>(items: impl IntoIterator<Item = T>) -> String {
-    items
-        .into_iter()
-        .map(|item| format!("{item:?}"))
-        .collect::<Vec<_>>()
-        .join("; ")
+fn format_load_errors(errors: jaq_core::load::Errors<&str, ()>) -> String {
+    let mut messages = Vec::new();
+
+    for (_file, error) in errors {
+        match error {
+            load::Error::Io(entries) => {
+                for (path, message) in entries {
+                    messages.push(format!("module import error for `{path}`: {message}"));
+                }
+            }
+            load::Error::Lex(entries) => {
+                for (expect, got) in entries {
+                    let found = preview_fragment(got);
+                    messages.push(format!("expected {}, found {found}", expect.as_str()));
+                }
+            }
+            load::Error::Parse(entries) => {
+                for (expect, found) in entries {
+                    let token = preview_fragment(found);
+                    messages.push(format!("expected {}, found {token}", expect.as_str()));
+                }
+            }
+        }
+    }
+
+    if messages.is_empty() {
+        "jq syntax error".to_string()
+    } else {
+        messages.join("; ")
+    }
+}
+
+fn format_compile_errors(errors: jaq_core::compile::Errors<&str, ()>) -> String {
+    let mut messages = Vec::new();
+
+    for (_file, undefined_items) in errors {
+        for (name, undefined) in undefined_items {
+            messages.push(match undefined {
+                jaq_core::compile::Undefined::Filter(arity) => {
+                    format!("unknown filter `{name}/{arity}`")
+                }
+                _ => format!("unknown {} `{name}`", undefined.as_str()),
+            });
+        }
+    }
+
+    if messages.is_empty() {
+        "jq syntax error".to_string()
+    } else {
+        messages.join("; ")
+    }
+}
+
+fn preview_fragment(input: &str) -> String {
+    if input.is_empty() {
+        return "end of input".to_string();
+    }
+
+    format!("`{}`", preview_token(input))
+}
+
+fn preview_token(input: &str) -> String {
+    const MAX_CHARS: usize = 24;
+
+    let mut preview = String::new();
+    for character in input.chars().take(MAX_CHARS) {
+        match character {
+            '\n' => preview.push_str("\\n"),
+            '\r' => preview.push_str("\\r"),
+            '\t' => preview.push_str("\\t"),
+            _ => preview.push(character),
+        }
+    }
+
+    if input.chars().count() > MAX_CHARS {
+        preview.push_str("...");
+    }
+
+    preview
 }
 
 fn infer_value_type(value: &jaq_json::Val) -> String {
