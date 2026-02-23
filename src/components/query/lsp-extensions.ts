@@ -3,9 +3,9 @@ import type {
   CompletionContext,
   CompletionSource,
 } from "@codemirror/autocomplete";
-import { hoverTooltip, type Extension, type Tooltip, type EditorView } from "@codemirror/view";
+import { hoverTooltip, type Tooltip, type EditorView } from "@codemirror/view";
 import { linter, type Diagnostic } from "@codemirror/lint";
-import type { Text } from "@codemirror/state";
+import type { Extension, Text } from "@codemirror/state";
 
 import * as lspService from "~/services/lsp-service";
 import * as tauriCommands from "~/services/tauri-commands";
