@@ -8,11 +8,41 @@ mod state;
 mod tree_nav;
 
 use crate::state::AppState;
+use std::path::PathBuf;
+#[cfg(any(target_os = "macos", target_os = "ios"))]
+use tauri::Emitter;
+use tauri::Manager;
+#[cfg(any(target_os = "macos", target_os = "ios"))]
+use tauri::RunEvent;
+
+fn initial_file_from_args() -> Option<String> {
+    std::env::args_os().skip(1).find_map(|arg| {
+        if arg.to_string_lossy().starts_with('-') {
+            return None;
+        }
+
+        let path = PathBuf::from(arg);
+        if path.is_file() {
+            return path.to_str().map(ToOwned::to_owned);
+        }
+
+        None
+    })
+}
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
         .manage(AppState::default())
+        .setup(|app| {
+            if let Some(path) = initial_file_from_args() {
+                if let Ok(mut pending) = app.state::<AppState>().pending_open_file.lock() {
+                    *pending = Some(path);
+                }
+            }
+
+            Ok(())
+        })
         .plugin(tauri_plugin_clipboard_manager::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
@@ -22,6 +52,7 @@ pub fn run() {
             commands::file::close_file,
             commands::file::get_file_info,
             commands::file::get_file_size,
+            commands::file::get_initial_file,
             commands::tree::expand_node,
             commands::tree::get_node_value,
             commands::result_tree::expand_result_node,
@@ -35,6 +66,29 @@ pub fn run() {
             commands::lsp::lsp_complete,
             commands::lsp::lsp_shutdown
         ])
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+        .build(tauri::generate_context!())
+        .expect("error while building tauri application")
+        .run(|_app, _event| {
+            #[cfg(any(target_os = "macos", target_os = "ios"))]
+            if let RunEvent::Opened { urls } = _event {
+                let Some(path) = urls.first().and_then(|url| {
+                    url.to_file_path()
+                        .ok()
+                        .and_then(|path| path.to_str().map(ToOwned::to_owned))
+                }) else {
+                    return;
+                };
+
+                if let Ok(mut pending) = _app.state::<AppState>().pending_open_file.lock() {
+                    *pending = Some(path.clone());
+                }
+
+                let _ = _app.emit("open-file", path);
+
+                if let Some(window) = _app.get_webview_window("main") {
+                    let _ = window.show();
+                    let _ = window.set_focus();
+                }
+            }
+        });
 }

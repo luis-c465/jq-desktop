@@ -114,6 +114,10 @@ export async function getFileSize(path: string): Promise<number> {
   return invoke<number>("get_file_size", { path });
 }
 
+export async function getInitialFile(): Promise<string | null> {
+  return invoke<string | null>("get_initial_file");
+}
+
 export async function copyToClipboard(text: string): Promise<void> {
   await writeText(text);
 }

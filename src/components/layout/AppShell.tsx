@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef } from "react";
+import { listen } from "@tauri-apps/api/event";
 
 import {
   ResizableHandle,
@@ -27,11 +28,29 @@ export function AppShell() {
     loadProgress,
     loadStatus,
     openFile,
+    openFilePath,
     closeFile,
   } = useFileState();
   const hasFileLoaded = Boolean(fileInfo?.loaded);
   const queryExecution = useQueryExecution(hasFileLoaded);
   const queryEditorRef = useRef<JqEditorHandle | null>(null);
+  const lastOpenedPathRef = useRef<string | null>(null);
+
+  const openIncomingFile = useCallback(
+    (path: string) => {
+      if (!path.toLowerCase().endsWith(".json")) {
+        return;
+      }
+
+      if (lastOpenedPathRef.current === path) {
+        return;
+      }
+
+      lastOpenedPathRef.current = path;
+      void openFilePath(path);
+    },
+    [openFilePath],
+  );
 
   useEffect(() => {
     void tauriCommands.lspInitialize().catch((error) => {
@@ -44,6 +63,59 @@ export function AppShell() {
       });
     };
   }, []);
+
+  useEffect(() => {
+    let isDisposed = false;
+
+    const setupFileOpenListeners = async () => {
+      const unlistenOpenFile = await listen<string>("open-file", (event) => {
+        openIncomingFile(event.payload);
+      });
+
+      const unlistenDragDrop = await listen<unknown>("tauri://drag-drop", (event) => {
+        const payload = event.payload;
+        const paths = Array.isArray(payload)
+          ? payload
+          : payload && typeof payload === "object" && "paths" in payload
+            ? (payload.paths as string[])
+            : [];
+
+        const firstPath = paths[0];
+        if (firstPath) {
+          openIncomingFile(firstPath);
+        }
+      });
+
+      const initialPath = await tauriCommands.getInitialFile();
+      if (!isDisposed && initialPath) {
+        openIncomingFile(initialPath);
+      }
+
+      return () => {
+        unlistenOpenFile();
+        unlistenDragDrop();
+      };
+    };
+
+    let teardown: (() => void) | undefined;
+
+    void setupFileOpenListeners()
+      .then((dispose) => {
+        if (isDisposed) {
+          dispose();
+          return;
+        }
+        teardown = dispose;
+      })
+      .catch((error) => {
+        console.error("Failed to setup file open listeners", error);
+      });
+
+    return () => {
+      isDisposed = true;
+      teardown?.();
+    };
+  }, [openIncomingFile]);
 
   const handleOpenFile = useCallback(() => {
     void openFile();

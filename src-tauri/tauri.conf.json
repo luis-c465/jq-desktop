@@ -26,6 +26,17 @@
   "bundle": {
     "active": true,
     "targets": "all",
+    "fileAssociations": [
+      {
+        "name": "JSON File",
+        "ext": [
+          "json"
+        ],
+        "role": "Viewer",
+        "description": "JSON file",
+        "mimeType": "application/json"
+      }
+    ],
     "externalBin": [
       "binaries/jq-lsp"
     ],

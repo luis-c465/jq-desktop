@@ -24,22 +24,7 @@ export function useFileState() {
   const [loadStatus, setLoadStatus] = useState("Ready");
   const [error, setError] = useState<string | null>(null);
 
-  const openFile = useCallback(async () => {
-    const selected = await open({
-      multiple: false,
-      directory: false,
-      filters: [{ name: "JSON Files", extensions: ["json"] }],
-    });
-
-    if (!selected) {
-      return;
-    }
-
-    const path = Array.isArray(selected) ? selected[0] : selected;
-    if (!path) {
-      return;
-    }
-
+  const openFilePath = useCallback(async (path: string) => {
     try {
       const size = await tauriCommands.getFileSize(path);
       if (size > LARGE_FILE_WARNING_BYTES) {
@@ -112,6 +97,25 @@ export function useFileState() {
     }
   }, []);
 
+  const openFile = useCallback(async () => {
+    const selected = await open({
+      multiple: false,
+      directory: false,
+      filters: [{ name: "JSON Files", extensions: ["json"] }],
+    });
+
+    if (!selected) {
+      return;
+    }
+
+    const path = Array.isArray(selected) ? selected[0] : selected;
+    if (!path) {
+      return;
+    }
+
+    await openFilePath(path);
+  }, [openFilePath]);
+
   const closeFile = useCallback(async () => {
     try {
       await tauriCommands.closeFile();
@@ -145,6 +149,7 @@ export function useFileState() {
     loadStatus,
     error,
     openFile,
+    openFilePath,
     closeFile,
     setProgress,
     setError,

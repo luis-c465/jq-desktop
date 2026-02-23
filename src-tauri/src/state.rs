@@ -8,6 +8,7 @@ use tokio::sync::Mutex as TokioMutex;
 pub struct AppState {
     pub json_store: Mutex<JsonStore>,
     pub result_store: Mutex<ResultStore>,
+    pub pending_open_file: Mutex<Option<String>>,
     pub query_cancelled: Arc<AtomicBool>,
     pub lsp_client: TokioMutex<Option<LspClient>>,
 }
@@ -31,6 +32,7 @@ impl Default for AppState {
         Self {
             json_store: Mutex::new(JsonStore::default()),
             result_store: Mutex::new(ResultStore::default()),
+            pending_open_file: Mutex::new(None),
             query_cancelled: Arc::new(AtomicBool::new(false)),
             lsp_client: TokioMutex::new(None),
         }

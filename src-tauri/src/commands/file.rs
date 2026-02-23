@@ -94,6 +94,15 @@ pub fn get_file_size(path: String) -> Result<u64, String> {
     Ok(metadata.len())
 }
 
+#[tauri::command]
+pub fn get_initial_file(state: tauri::State<'_, AppState>) -> Result<Option<String>, String> {
+    let mut pending = state
+        .pending_open_file
+        .lock()
+        .map_err(|_| "Failed to acquire application state lock".to_string())?;
+    Ok(pending.take())
+}
+
 async fn load_file_impl(
     path: &str,
     on_progress: &Channel<LoadProgress>,
