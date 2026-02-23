@@ -21,6 +21,15 @@ export type LspDiagnostic = {
   source?: string;
 };
 
+export type LspCompletionItem = {
+  label: string;
+  kind?: number;
+  detail?: string | null;
+  insertText?: string | null;
+  insertTextFormat?: number | null;
+  documentation?: string | { kind?: string; value: string } | null;
+};
+
 export async function loadFile(
   path: string,
   onProgress: (progress: LoadProgress) => void,
@@ -93,4 +102,16 @@ export async function getFileSize(path: string): Promise<number> {
 
 export async function copyToClipboard(text: string): Promise<void> {
   await writeText(text);
+}
+
+export async function lspComplete(
+  uri: string,
+  line: number,
+  character: number,
+): Promise<LspCompletionItem[]> {
+  return invoke<LspCompletionItem[]>("lsp_complete", {
+    uri,
+    line,
+    character,
+  });
 }
