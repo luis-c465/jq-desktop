@@ -3,12 +3,13 @@
   "mcp": {
     "shadcn": {
       "type": "local",
-      "command": [
-        "bunx",
-        "shadcn@latest",
-        "mcp"
-      ],
+      "command": ["bunx", "shadcn@latest", "mcp"],
       "enabled": true
+    }
+  },
+  "lsp": {
+    "typescript": {
+      "disabled": true
     }
   },
   "permission": "allow"
