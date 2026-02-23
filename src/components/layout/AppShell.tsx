@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { listen } from "@tauri-apps/api/event";
 
 import { HelpModal } from "~/components/HelpModal";
+import { JqReferenceModal } from "~/components/JqReferenceModal";
 import {
   ResizableHandle,
   ResizablePanel,
@@ -37,6 +38,7 @@ export function AppShell() {
   const queryEditorRef = useRef<JqEditorHandle | null>(null);
   const lastOpenedPathRef = useRef<string | null>(null);
   const [isHelpOpen, setIsHelpOpen] = useState(false);
+  const [isJqReferenceOpen, setIsJqReferenceOpen] = useState(false);
 
   const openIncomingFile = useCallback(
     (path: string) => {
@@ -157,9 +159,11 @@ export function AppShell() {
         fileInfo={fileInfo}
         isLoading={isLoading}
         onOpenFile={handleOpenFile}
+        onOpenJqReference={() => setIsJqReferenceOpen(true)}
         onOpenHelp={() => setIsHelpOpen(true)}
         onCloseFile={handleCloseFile}
       />
+      <JqReferenceModal open={isJqReferenceOpen} onOpenChange={setIsJqReferenceOpen} />
       <HelpModal open={isHelpOpen} onOpenChange={setIsHelpOpen} />
 
       <div className="relative min-h-0 flex-1">

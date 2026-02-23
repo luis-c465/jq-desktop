@@ -1,4 +1,4 @@
-import { CircleHelp, FileJson, X } from "lucide-react";
+import { BookOpen, CircleHelp, FileJson, X } from "lucide-react";
 
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
@@ -9,6 +9,7 @@ type ToolbarProps = {
   fileInfo: FileInfo | null;
   isLoading: boolean;
   onOpenFile: () => void;
+  onOpenJqReference: () => void;
   onOpenHelp: () => void;
   onCloseFile: () => void;
 };
@@ -34,6 +35,7 @@ export function Toolbar({
   fileInfo,
   isLoading,
   onOpenFile,
+  onOpenJqReference,
   onOpenHelp,
   onCloseFile,
 }: ToolbarProps) {
@@ -61,6 +63,22 @@ export function Toolbar({
       </div>
 
       <div className="ml-auto flex items-center gap-1">
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={onOpenJqReference}
+                aria-label="Open jq reference"
+              >
+                <BookOpen className="size-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom">jq Reference</TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
