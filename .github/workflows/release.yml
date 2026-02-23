@@ -4,6 +4,12 @@ on:
   push:
     tags:
       - "v*"
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: "Tag name for the release (e.g. v1.0.0)"
+        required: true
+        type: string
 
 permissions:
   contents: write
@@ -93,8 +99,8 @@ jobs:
           # WINDOWS_CERTIFICATE_PASSWORD: ${{ secrets.WINDOWS_CERTIFICATE_PASSWORD }}
         with:
           tauriScript: bun tauri
-          tagName: ${{ github.ref_name }}
-          releaseName: "jq-desktop ${{ github.ref_name }}"
+          tagName: ${{ github.event_name == 'workflow_dispatch' && inputs.tag_name || github.ref_name }}
+          releaseName: "jq-desktop ${{ github.event_name == 'workflow_dispatch' && inputs.tag_name || github.ref_name }}"
           releaseBody: "See the assets to download this version."
           releaseDraft: false
           prerelease: false
