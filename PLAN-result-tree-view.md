@@ -656,3 +656,88 @@ Add a new "Tree" view tab to the JQ results panel that allows users to explore q
 | `src/hooks/useViewportSize.ts` | Extracted from `JsonTreeViewer.tsx` for shared use |
 | `src/components/json-tree/JsonTreeViewer.tsx` | Import `useViewportSize` from new location |
 | `src/components/json-tree/JsonTreeNode.tsx` | Add optional `getValueFn` prop |
+
+---
+
+## Appendix: Parallelizing Execution
+
+### Dependency Graph
+
+| Step | Depends On | Blocks |
+|------|-----------|--------|
+| 1 | — | 2, 3 |
+| 2 | 1 | 3, 4 |
+| 3 | 2 | 5 |
+| 4 | 2 | 10 |
+| 5 | 3 | 7 |
+| 6 | — | 7, 8 |
+| 7 | 5, 6 | 8 |
+| 8 | 7 | 9 |
+| 9 | 8 | 10 |
+| 10 | 6, 9 | — |
+
+### Critical Path
+
+The longest sequential chain that cannot be parallelized:
+
+```
+Step 1 → Step 2 → Step 3 → Step 5 → Step 7 → Step 8 → Step 9 → Step 10
+```
+
+Steps 4 and 6 are off the critical path and can overlap with steps on it.
+
+### Execution Waves
+
+```
+WAVE 1 ─────────────────────────────────────────────
+  Step 1: Extract tree navigation helpers (Rust)
+  (no dependencies)
+
+WAVE 2 ─────────────────────────────────────────────
+  Step 2: Add ResultStore          │  Step 6: Update TypeScript types
+  (depends on Step 1)              │  (no dependencies — can start
+                                   │   immediately, even during Wave 1)
+
+WAVE 3 ─────────────────────────────────────────────
+  Step 3: Add Tauri commands       │  Step 4: Modify run_jq_query
+  (depends on Step 2)              │  (depends on Step 2)
+
+WAVE 4 ─────────────────────────────────────────────
+  Step 5: Frontend command wrappers
+  (depends on Step 3; Step 6 already done by now)
+    ↓
+  Step 7: useResultTreeData hook
+  (depends on Step 5 + Step 6)
+
+WAVE 5 ─────────────────────────────────────────────
+  Step 8: ResultTreeViewer component
+    ↓
+  Step 9: Integrate Tree tab into ResultViewer
+    ↓
+  Step 10: Wire result store lifecycle
+```
+
+Note: Step 6 has no dependencies and is short (~TypeScript-only changes). It can be started concurrently with Step 1 or Step 2 without conflict.
+
+### Team Allocation
+
+**1 person:** Follow waves in order. Do Steps 3 and 4 back-to-back (both depend on Step 2, no inter-dependency). Do Step 6 whenever convenient — before Step 7 is the only hard constraint.
+
+**2 people:**
+- Person A (critical path): 1 → 2 → 3 → 5 → 7 → 8 → 9 → 10
+- Person B (parallel work): 6 (any time) + 4 (after Step 2 done)
+
+**3+ people:**
+- Person A: 1 → 3 → 5 → 8 → 9
+- Person B: 2 → 4
+- Person C: 6 → 7 → 10
+
+### Time Savings
+
+| Execution style | Estimated total time |
+|-----------------|---------------------|
+| Fully sequential | ~250 min |
+| Parallelized (2 people) | ~205 min |
+| Parallelized (3+ people) | ~185 min |
+
+Parallelizing Steps 4 and 6 onto separate tracks saves roughly 45–65 minutes depending on team size.
