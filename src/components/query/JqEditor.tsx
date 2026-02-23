@@ -27,6 +27,11 @@ const DOCUMENT_URI = "file:///query.jq";
 const editorTheme = EditorView.theme({
   "&": {
     fontSize: "12px",
+    color: "var(--foreground)",
+    backgroundColor: "transparent",
+  },
+  ".cm-editor": {
+    backgroundColor: "transparent",
   },
   ".cm-scroller": {
     fontFamily: "var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace)",
@@ -34,11 +39,45 @@ const editorTheme = EditorView.theme({
   },
   ".cm-content": {
     padding: "8px 10px",
+    caretColor: "var(--foreground)",
+  },
+  ".cm-cursor, .cm-dropCursor": {
+    borderLeftColor: "var(--foreground)",
+  },
+  ".cm-selectionBackground, &.cm-focused .cm-selectionBackground": {
+    backgroundColor: "color-mix(in oklch, var(--foreground) 20%, transparent)",
+  },
+  ".cm-gutters": {
+    backgroundColor: "transparent",
+    color: "var(--muted-foreground)",
+    border: "none",
   },
   ".cm-focused": {
     outline: "none",
   },
-});
+  ".cm-keyword": {
+    color: "#ff7ab2",
+  },
+  ".cm-operator": {
+    color: "#9ddcff",
+  },
+  ".cm-string": {
+    color: "#a5d6ff",
+  },
+  ".cm-number": {
+    color: "#f5d547",
+  },
+  ".cm-builtin": {
+    color: "#82cfff",
+  },
+  ".cm-variableName": {
+    color: "#ffd580",
+  },
+  ".cm-comment": {
+    color: "#8b949e",
+    fontStyle: "italic",
+  },
+}, { dark: true });
 
 export type JqEditorHandle = {
   focus: () => void;
@@ -70,7 +109,27 @@ export const JqEditor = forwardRef<JqEditorHandle, JqEditorProps>(function JqEdi
 ) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const editorRef = useRef<EditorView | null>(null);
+  const onChangeRef = useRef(onChange);
+  const onExecuteRef = useRef(onExecute);
+  const onCancelRef = useRef(onCancel);
+  const onDiagnosticsChangeRef = useRef(onDiagnosticsChange);
   const editableCompartment = useRef(new Compartment()).current;
+
+  useEffect(() => {
+    onChangeRef.current = onChange;
+  }, [onChange]);
+
+  useEffect(() => {
+    onExecuteRef.current = onExecute;
+  }, [onExecute]);
+
+  useEffect(() => {
+    onCancelRef.current = onCancel;
+  }, [onCancel]);
+
+  useEffect(() => {
+    onDiagnosticsChangeRef.current = onDiagnosticsChange;
+  }, [onDiagnosticsChange]);
 
   useImperativeHandle(
     ref,
@@ -91,18 +150,22 @@ export const JqEditor = forwardRef<JqEditorHandle, JqEditorProps>(function JqEdi
       {
         key: "Mod-Enter",
         run: () => {
-          onExecute();
+          onExecuteRef.current();
           return true;
         },
       },
       {
         key: "Escape",
         run: () => {
-          onCancel();
+          onCancelRef.current();
           return true;
         },
       },
     ]);
+
+    const handleDiagnostics = (diagnostics: LspDiagnostic[]) => {
+      onDiagnosticsChangeRef.current?.(diagnostics);
+    };
 
     const extensions: Extension[] = [
       jqLanguage(),
@@ -116,16 +179,16 @@ export const JqEditor = forwardRef<JqEditorHandle, JqEditorProps>(function JqEdi
         override: [jqCompletionSource(DOCUMENT_URI)],
       }),
       jqHoverTooltip(DOCUMENT_URI),
-      jqLintSource(DOCUMENT_URI, onDiagnosticsChange),
+      jqLintSource(DOCUMENT_URI, handleDiagnostics),
       EditorView.updateListener.of((update: ViewUpdate) => {
         if (update.docChanged) {
-          onChange(update.state.doc.toString());
+          onChangeRef.current(update.state.doc.toString());
         }
       }),
       EditorView.domEventHandlers({
         keydown: (event: KeyboardEvent) => {
           if (event.key === "Escape") {
-            onCancel();
+            onCancelRef.current();
           }
         },
       }),
@@ -145,7 +208,7 @@ export const JqEditor = forwardRef<JqEditorHandle, JqEditorProps>(function JqEdi
       editorRef.current?.destroy();
       editorRef.current = null;
     };
-  }, [disabled, editableCompartment, onCancel, onChange, onDiagnosticsChange, onExecute]);
+  }, [disabled, editableCompartment]);
 
   useEffect(() => {
     const view = editorRef.current;
