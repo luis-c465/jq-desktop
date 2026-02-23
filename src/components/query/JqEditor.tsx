@@ -1,6 +1,8 @@
 import { autocompletion } from "@codemirror/autocomplete";
 import { defaultKeymap } from "@codemirror/commands";
+import { tags } from "@lezer/highlight";
 import { keymap } from "@codemirror/view";
+import { HighlightStyle, syntaxHighlighting } from "@codemirror/language";
 import {
   Compartment,
   EditorSelection,
@@ -55,29 +57,17 @@ const editorTheme = EditorView.theme({
   ".cm-focused": {
     outline: "none",
   },
-  ".cm-keyword": {
-    color: "#ff7ab2",
-  },
-  ".cm-operator": {
-    color: "#9ddcff",
-  },
-  ".cm-string": {
-    color: "#a5d6ff",
-  },
-  ".cm-number": {
-    color: "#f5d547",
-  },
-  ".cm-builtin": {
-    color: "#82cfff",
-  },
-  ".cm-variableName": {
-    color: "#ffd580",
-  },
-  ".cm-comment": {
-    color: "#8b949e",
-    fontStyle: "italic",
-  },
 }, { dark: true });
+
+const jqHighlightStyle = HighlightStyle.define([
+  { tag: tags.keyword, color: "#ff7ab2" },
+  { tag: tags.operator, color: "#9ddcff" },
+  { tag: tags.string, color: "#a5d6ff" },
+  { tag: tags.number, color: "#f5d547" },
+  { tag: tags.standard(tags.variableName), color: "#82cfff" },
+  { tag: tags.variableName, color: "#ffd580" },
+  { tag: tags.comment, color: "#8b949e", fontStyle: "italic" },
+]);
 
 export type JqEditorHandle = {
   focus: () => void;
@@ -169,6 +159,7 @@ export const JqEditor = forwardRef<JqEditorHandle, JqEditorProps>(function JqEdi
 
     const extensions: Extension[] = [
       jqLanguage(),
+      syntaxHighlighting(jqHighlightStyle),
       editorTheme,
       keymap.of(defaultKeymap),
       runOnModEnter,
