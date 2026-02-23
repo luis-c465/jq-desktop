@@ -34,6 +34,29 @@ function getDocumentationText(
   return documentation.value ?? null;
 }
 
+function appendMarkdownFragment(container: HTMLElement, block: string): void {
+  const trimmed = block.trim();
+  if (!trimmed) {
+    return;
+  }
+
+  const codeFenceMatch = /^```(?:\w+)?\n([\s\S]*?)\n```$/m.exec(trimmed);
+  if (codeFenceMatch) {
+    const pre = document.createElement("pre");
+    pre.className = "overflow-x-auto rounded-sm bg-muted/50 p-2 font-mono text-[11px]";
+    const code = document.createElement("code");
+    code.textContent = codeFenceMatch[1] ?? "";
+    pre.append(code);
+    container.append(pre);
+    return;
+  }
+
+  const paragraph = document.createElement("p");
+  paragraph.className = "whitespace-pre-wrap";
+  paragraph.textContent = trimmed;
+  container.append(paragraph);
+}
+
 function documentationToInfo(markdown: string | null): Completion["info"] {
   if (!markdown) {
     return undefined;
@@ -41,8 +64,14 @@ function documentationToInfo(markdown: string | null): Completion["info"] {
 
   return () => {
     const container = document.createElement("div");
-    container.className = "max-w-xs whitespace-pre-wrap text-xs";
-    container.textContent = markdown;
+    container.className = "max-w-xs space-y-2 text-xs";
+
+    markdown
+      .split(/\n\n+/)
+      .forEach((block) => {
+        appendMarkdownFragment(container, block);
+      });
+
     return container;
   };
 }
@@ -166,7 +195,13 @@ export function jqCompletionSource(documentUri: string): CompletionSource {
     const lineNumber = line.number - 1;
     const character = context.pos - line.from;
 
-    const items = await tauriCommands.lspComplete(documentUri, lineNumber, character);
+    let items: tauriCommands.LspCompletionItem[] = [];
+    try {
+      items = await tauriCommands.lspComplete(documentUri, lineNumber, character);
+    } catch {
+      return null;
+    }
+
     const options: Completion[] = items.map((item) => {
       const lspInsertText = item.insertText ?? item.label;
       const insertText =
