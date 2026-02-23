@@ -23,6 +23,7 @@ export type UseQueryExecutionReturn = {
   isRunning: boolean;
   results: QueryResultItem[];
   resultCount: number;
+  resultTreeReady: boolean;
   elapsedMs: number | null;
   error: string | null;
   setQuery: (query: string) => void;
@@ -44,6 +45,7 @@ function handleQueryResult(
   setIsRunning: (value: boolean) => void,
   setResults: Dispatch<SetStateAction<QueryResultItem[]>>,
   setResultCount: (value: number) => void,
+  setResultTreeReady: (value: boolean) => void,
   setElapsedMs: (value: number | null) => void,
   setError: (value: string | null) => void,
 ) {
@@ -61,6 +63,7 @@ function handleQueryResult(
     case "Complete": {
       setIsRunning(false);
       setResultCount(message.totalResults);
+      setResultTreeReady(true);
       setElapsedMs(message.elapsedMs);
       break;
     }
@@ -82,6 +85,7 @@ export function useQueryExecution(hasFileLoaded: boolean): UseQueryExecutionRetu
   const [isRunning, setIsRunning] = useState(false);
   const [results, setResults] = useState<QueryResultItem[]>([]);
   const [resultCount, setResultCount] = useState(0);
+  const [resultTreeReady, setResultTreeReady] = useState(false);
   const [elapsedMs, setElapsedMs] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const validationRunId = useRef(0);
@@ -137,6 +141,7 @@ export function useQueryExecution(hasFileLoaded: boolean): UseQueryExecutionRetu
 
     setResults([]);
     setResultCount(0);
+    setResultTreeReady(false);
     setElapsedMs(null);
     setError(null);
     setIsRunning(true);
@@ -148,6 +153,7 @@ export function useQueryExecution(hasFileLoaded: boolean): UseQueryExecutionRetu
           setIsRunning,
           setResults,
           setResultCount,
+          setResultTreeReady,
           setElapsedMs,
           setError,
         );
@@ -174,6 +180,7 @@ export function useQueryExecution(hasFileLoaded: boolean): UseQueryExecutionRetu
     setIsRunning(false);
     setResults([]);
     setResultCount(0);
+    setResultTreeReady(false);
     setElapsedMs(null);
     setError(null);
   }, []);
@@ -191,6 +198,7 @@ export function useQueryExecution(hasFileLoaded: boolean): UseQueryExecutionRetu
     isRunning,
     results,
     resultCount,
+    resultTreeReady,
     elapsedMs,
     error,
     setQuery,
