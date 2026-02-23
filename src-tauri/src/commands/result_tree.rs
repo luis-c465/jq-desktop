@@ -6,7 +6,7 @@ const DEFAULT_EXPAND_LIMIT: usize = 500;
 const MAX_NODE_VALUE_BYTES: usize = 1024 * 1024;
 
 #[tauri::command]
-pub fn expand_node(
+pub fn expand_result_node(
     path: String,
     offset: Option<usize>,
     limit: Option<usize>,
@@ -16,26 +16,12 @@ pub fn expand_node(
     let limit = limit.unwrap_or(DEFAULT_EXPAND_LIMIT);
 
     let store = state
-        .json_store
+        .result_store
         .lock()
         .map_err(|_| "Failed to acquire application state lock".to_string())?;
 
-    let (children, total_children) = if path == "$" {
-        let value = store
-            .get_value_at_path(&path)
-            .map_err(|error| error.to_string())?;
-
-        if value.is_object() || value.is_array() {
-            store
-                .get_children(&path, offset, limit)
-                .map_err(|error| error.to_string())?
-        } else {
-            let root_nodes = store.get_root_nodes().map_err(|error| error.to_string())?;
-            let total = root_nodes.len();
-            let start = offset.min(total);
-            let children = root_nodes.into_iter().skip(start).take(limit).collect();
-            (children, total)
-        }
+    let (children, total_children) = if path == "$result" {
+        store.get_result_root_nodes(offset, limit)
     } else {
         store
             .get_children(&path, offset, limit)
@@ -51,9 +37,12 @@ pub fn expand_node(
 }
 
 #[tauri::command]
-pub fn get_node_value(path: String, state: tauri::State<'_, AppState>) -> Result<String, String> {
+pub fn get_result_node_value(
+    path: String,
+    state: tauri::State<'_, AppState>,
+) -> Result<String, String> {
     let store = state
-        .json_store
+        .result_store
         .lock()
         .map_err(|_| "Failed to acquire application state lock".to_string())?;
 
@@ -71,18 +60,4 @@ pub fn get_node_value(path: String, state: tauri::State<'_, AppState>) -> Result
         "{}\n... (truncated)",
         truncate_utf8_bytes(&serialized, MAX_NODE_VALUE_BYTES)
     ))
-}
-#[cfg(test)]
-mod tests {
-    use crate::tree_nav::truncate_utf8_bytes;
-
-    #[test]
-    fn truncate_utf8_bytes_keeps_valid_utf8_boundaries() {
-        let input = "a😀b";
-        let out = truncate_utf8_bytes(input, 2);
-        assert_eq!(out, "a");
-
-        let out = truncate_utf8_bytes(input, 5);
-        assert_eq!(out, "a😀");
-    }
 }

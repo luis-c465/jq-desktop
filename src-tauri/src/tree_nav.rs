@@ -16,6 +16,15 @@ pub struct TreeNodeInfo {
     pub has_children: bool,
 }
 
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ExpandResult {
+    pub children: Vec<TreeNodeInfo>,
+    pub total_children: usize,
+    pub offset: usize,
+    pub has_more: bool,
+}
+
 pub fn get_root_nodes_of_value(root: &Value) -> Vec<TreeNodeInfo> {
     match root {
         Value::Object(map) => map
@@ -240,4 +249,21 @@ fn has_children(value: &Value) -> bool {
         Value::Array(values) => !values.is_empty(),
         _ => false,
     }
+}
+
+pub fn truncate_utf8_bytes(input: &str, max_bytes: usize) -> String {
+    if input.len() <= max_bytes {
+        return input.to_string();
+    }
+
+    let mut end = 0;
+    for (idx, ch) in input.char_indices() {
+        let ch_end = idx + ch.len_utf8();
+        if ch_end > max_bytes {
+            break;
+        }
+        end = ch_end;
+    }
+
+    input[..end].to_string()
 }
