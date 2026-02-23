@@ -18,6 +18,7 @@ impl ResultStore {
         self.results.push(value);
     }
 
+    #[cfg(test)]
     pub fn len(&self) -> usize {
         self.results.len()
     }

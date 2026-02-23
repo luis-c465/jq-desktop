@@ -8,7 +8,6 @@ pub enum AppError {
     JqCompileError(String),
     JqRuntimeError(String),
     Cancelled,
-    FileTooLarge(u64),
     NoFileLoaded,
 }
 
@@ -20,12 +19,6 @@ impl Display for AppError {
             Self::JqCompileError(message) => write!(f, "jq syntax error: {message}"),
             Self::JqRuntimeError(message) => write!(f, "jq runtime error: {message}"),
             Self::Cancelled => write!(f, "Query cancelled"),
-            Self::FileTooLarge(size) => {
-                write!(
-                    f,
-                    "File is too large ({size} bytes). Maximum supported size is 4 GB."
-                )
-            }
             Self::NoFileLoaded => write!(f, "No file loaded. Open a JSON file first."),
         }
     }

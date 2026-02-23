@@ -16,6 +16,7 @@ impl JqEngine {
         Ok(())
     }
 
+    #[cfg(test)]
     pub fn execute(query: &str, input: &Value) -> Result<Vec<JqOutput>, AppError> {
         let mut outputs = Vec::new();
         Self::execute_stream(query, input, |output| {
