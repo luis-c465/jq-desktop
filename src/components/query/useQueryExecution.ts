@@ -1,13 +1,13 @@
 import {
   useCallback,
   useEffect,
-  useRef,
   useState,
   type Dispatch,
   type SetStateAction,
 } from "react";
 
 import * as tauriCommands from "~/services/tauri-commands";
+import type { LspDiagnostic } from "~/services/tauri-commands";
 import type { QueryResult } from "~/types";
 
 export type QueryResultItem = {
@@ -27,6 +27,7 @@ export type UseQueryExecutionReturn = {
   elapsedMs: number | null;
   error: string | null;
   setQuery: (query: string) => void;
+  setDiagnostics: (diagnostics: LspDiagnostic[]) => void;
   executeQuery: () => Promise<void>;
   cancelExecution: () => Promise<void>;
   reset: () => void;
@@ -88,46 +89,31 @@ export function useQueryExecution(hasFileLoaded: boolean): UseQueryExecutionRetu
   const [resultTreeReady, setResultTreeReady] = useState(false);
   const [elapsedMs, setElapsedMs] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const validationRunId = useRef(0);
 
   const setQuery = useCallback((nextQuery: string) => {
     setQueryState(nextQuery);
     setError(null);
   }, []);
 
-  useEffect(() => {
-    const trimmed = query.trim();
+  const setDiagnostics = useCallback(
+    (diagnostics: LspDiagnostic[]) => {
+      if (!query.trim()) {
+        setIsValid(null);
+        setValidationError(null);
+        return;
+      }
 
-    if (!trimmed) {
-      setIsValid(null);
-      setValidationError(null);
-      return;
-    }
-
-    const currentRunId = validationRunId.current + 1;
-    validationRunId.current = currentRunId;
-
-    const timer = window.setTimeout(async () => {
-      try {
-        await tauriCommands.validateJqQuery(trimmed);
-        if (validationRunId.current !== currentRunId) {
-          return;
-        }
+      if (diagnostics.length === 0) {
         setIsValid(true);
         setValidationError(null);
-      } catch (validateError) {
-        if (validationRunId.current !== currentRunId) {
-          return;
-        }
-        setIsValid(false);
-        setValidationError(getErrorMessage(validateError, "jq syntax error"));
+        return;
       }
-    }, 300);
 
-    return () => {
-      window.clearTimeout(timer);
-    };
-  }, [query]);
+      setIsValid(false);
+      setValidationError(diagnostics[0]?.message ?? "jq syntax error");
+    },
+    [query],
+  );
 
   const executeQuery = useCallback(async () => {
     const trimmed = query.trim();
@@ -202,6 +188,7 @@ export function useQueryExecution(hasFileLoaded: boolean): UseQueryExecutionRetu
     elapsedMs,
     error,
     setQuery,
+    setDiagnostics,
     executeQuery,
     cancelExecution,
     reset,

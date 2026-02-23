@@ -3,6 +3,24 @@ import { writeText } from "@tauri-apps/plugin-clipboard-manager";
 
 import type { ExpandResult, LoadProgress, QueryResult } from "~/types";
 
+export type LspPosition = {
+  line: number;
+  character: number;
+};
+
+export type LspRange = {
+  start: LspPosition;
+  end: LspPosition;
+};
+
+export type LspDiagnostic = {
+  range: LspRange;
+  message: string;
+  severity?: number;
+  code?: string | number;
+  source?: string;
+};
+
 export async function loadFile(
   path: string,
   onProgress: (progress: LoadProgress) => void,
@@ -55,6 +73,10 @@ export async function runJqQuery(
 
 export async function validateJqQuery(query: string): Promise<boolean> {
   return invoke<boolean>("validate_jq_query", { query });
+}
+
+export async function lspDidChange(uri: string, text: string): Promise<LspDiagnostic[]> {
+  return invoke<LspDiagnostic[]>("lsp_did_change", { uri, text });
 }
 
 export async function cancelQuery(): Promise<void> {
