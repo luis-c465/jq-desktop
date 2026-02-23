@@ -1,0 +1,3 @@
+[submodule "jq-lsp"]
+	path = jq-lsp
+	url = https://github.com/wader/jq-lsp.git
