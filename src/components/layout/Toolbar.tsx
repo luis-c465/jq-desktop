@@ -1,4 +1,4 @@
-import { FileJson, X } from "lucide-react";
+import { CircleHelp, FileJson, X } from "lucide-react";
 
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
@@ -9,6 +9,7 @@ type ToolbarProps = {
   fileInfo: FileInfo | null;
   isLoading: boolean;
   onOpenFile: () => void;
+  onOpenHelp: () => void;
   onCloseFile: () => void;
 };
 
@@ -33,6 +34,7 @@ export function Toolbar({
   fileInfo,
   isLoading,
   onOpenFile,
+  onOpenHelp,
   onCloseFile,
 }: ToolbarProps) {
   return (
@@ -58,7 +60,18 @@ export function Toolbar({
         ) : null}
       </div>
 
-      <div className="ml-auto">
+      <div className="ml-auto flex items-center gap-1">
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant="ghost" size="icon" onClick={onOpenHelp} aria-label="Open help">
+                <CircleHelp className="size-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom">Help (F1)</TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>

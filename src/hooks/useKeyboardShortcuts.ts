@@ -2,6 +2,7 @@ import { useEffect } from "react";
 
 type ShortcutHandlers = {
   onOpenFile: () => void;
+  onOpenHelp: () => void;
   onCloseFile: () => void;
   onExecuteQuery: () => void;
   onCancelQuery: () => void;
@@ -11,6 +12,7 @@ type ShortcutHandlers = {
 
 export function useKeyboardShortcuts({
   onOpenFile,
+  onOpenHelp,
   onCloseFile,
   onExecuteQuery,
   onCancelQuery,
@@ -25,6 +27,12 @@ export function useKeyboardShortcuts({
       if (isMetaOrCtrl && key === "o") {
         event.preventDefault();
         onOpenFile();
+        return;
+      }
+
+      if (event.key === "F1") {
+        event.preventDefault();
+        onOpenHelp();
         return;
       }
 
@@ -60,5 +68,13 @@ export function useKeyboardShortcuts({
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [focusQueryEditor, isQueryRunning, onCancelQuery, onCloseFile, onExecuteQuery, onOpenFile]);
+  }, [
+    focusQueryEditor,
+    isQueryRunning,
+    onCancelQuery,
+    onCloseFile,
+    onExecuteQuery,
+    onOpenFile,
+    onOpenHelp,
+  ]);
 }

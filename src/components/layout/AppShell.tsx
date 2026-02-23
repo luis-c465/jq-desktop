@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { listen } from "@tauri-apps/api/event";
 
+import { HelpModal } from "~/components/HelpModal";
 import {
   ResizableHandle,
   ResizablePanel,
@@ -35,6 +36,7 @@ export function AppShell() {
   const queryExecution = useQueryExecution(hasFileLoaded);
   const queryEditorRef = useRef<JqEditorHandle | null>(null);
   const lastOpenedPathRef = useRef<string | null>(null);
+  const [isHelpOpen, setIsHelpOpen] = useState(false);
 
   const openIncomingFile = useCallback(
     (path: string) => {
@@ -133,6 +135,9 @@ export function AppShell() {
 
   useKeyboardShortcuts({
     onOpenFile: handleOpenFile,
+    onOpenHelp: () => {
+      setIsHelpOpen(true);
+    },
     onCloseFile: handleCloseFile,
     onExecuteQuery: () => {
       void queryExecution.executeQuery();
@@ -152,8 +157,10 @@ export function AppShell() {
         fileInfo={fileInfo}
         isLoading={isLoading}
         onOpenFile={handleOpenFile}
+        onOpenHelp={() => setIsHelpOpen(true)}
         onCloseFile={handleCloseFile}
       />
+      <HelpModal open={isHelpOpen} onOpenChange={setIsHelpOpen} />
 
       <div className="relative min-h-0 flex-1">
         <ResizablePanelGroup orientation="horizontal">
@@ -169,7 +176,7 @@ export function AppShell() {
 
           <ResizablePanel defaultSize={50} minSize={25}>
             <ResizablePanelGroup orientation="vertical">
-              <ResizablePanel defaultSize={20} minSize={15}>
+              <ResizablePanel defaultSize={30} minSize={15}>
                 <QueryEditor
                   hasFileLoaded={hasFileLoaded}
                   queryExecution={queryExecution}
@@ -179,7 +186,7 @@ export function AppShell() {
 
               <ResizableHandle withHandle />
 
-              <ResizablePanel defaultSize={80} minSize={25}>
+              <ResizablePanel defaultSize={70} minSize={25}>
                 <ResultViewer
                   isRunning={queryExecution.isRunning}
                   error={queryExecution.error}
