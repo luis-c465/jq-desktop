@@ -100,6 +100,7 @@ export function AppShell() {
                   results={queryExecution.results}
                   resultCount={queryExecution.resultCount}
                   elapsedMs={queryExecution.elapsedMs}
+                  resultTreeReady={queryExecution.resultTreeReady}
                 />
               </ResizablePanel>
             </ResizablePanelGroup>

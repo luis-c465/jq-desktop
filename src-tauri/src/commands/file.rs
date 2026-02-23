@@ -59,6 +59,13 @@ pub fn close_file(state: tauri::State<'_, AppState>) -> Result<(), String> {
         .lock()
         .map_err(|_| "Failed to acquire application state lock".to_string())?;
     store.clear();
+
+    let mut result_store = state
+        .result_store
+        .lock()
+        .map_err(|_| "Failed to acquire application state lock".to_string())?;
+    result_store.clear();
+
     Ok(())
 }
 
