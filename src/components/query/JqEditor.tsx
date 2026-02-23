@@ -17,9 +17,10 @@ import {
 } from "react";
 
 import { cn } from "~/lib/utils";
+import type { LspDiagnostic } from "~/services/tauri-commands";
 
 import { jqLanguage } from "./jq-language";
-import { jqCompletionSource, jqHoverTooltip } from "./lsp-extensions";
+import { jqCompletionSource, jqHoverTooltip, jqLintSource } from "./lsp-extensions";
 
 const DOCUMENT_URI = "file:///query.jq";
 
@@ -50,11 +51,21 @@ export type JqEditorProps = {
   onCancel: () => void;
   disabled: boolean;
   isValid: boolean | null;
+  onDiagnosticsChange?: (diagnostics: LspDiagnostic[]) => void;
   className?: string;
 };
 
 export const JqEditor = forwardRef<JqEditorHandle, JqEditorProps>(function JqEditor(
-  { value, onChange, onExecute, onCancel, disabled, isValid, className },
+  {
+    value,
+    onChange,
+    onExecute,
+    onCancel,
+    disabled,
+    isValid,
+    onDiagnosticsChange,
+    className,
+  },
   ref,
 ) {
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -105,6 +116,7 @@ export const JqEditor = forwardRef<JqEditorHandle, JqEditorProps>(function JqEdi
         override: [jqCompletionSource(DOCUMENT_URI)],
       }),
       jqHoverTooltip(DOCUMENT_URI),
+      jqLintSource(DOCUMENT_URI, onDiagnosticsChange),
       EditorView.updateListener.of((update: ViewUpdate) => {
         if (update.docChanged) {
           onChange(update.state.doc.toString());
@@ -133,7 +145,7 @@ export const JqEditor = forwardRef<JqEditorHandle, JqEditorProps>(function JqEdi
       editorRef.current?.destroy();
       editorRef.current = null;
     };
-  }, [disabled, editableCompartment, onCancel, onChange, onExecute]);
+  }, [disabled, editableCompartment, onCancel, onChange, onDiagnosticsChange, onExecute]);
 
   useEffect(() => {
     const view = editorRef.current;

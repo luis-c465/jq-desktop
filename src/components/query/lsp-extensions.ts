@@ -4,9 +4,36 @@ import type {
   CompletionSource,
 } from "@codemirror/autocomplete";
 import { hoverTooltip, type Extension, type Tooltip, type EditorView } from "@codemirror/view";
+import { linter, type Diagnostic } from "@codemirror/lint";
+import type { Text } from "@codemirror/state";
 
 import * as lspService from "~/services/lsp-service";
 import * as tauriCommands from "~/services/tauri-commands";
+
+function getOffsetFromPosition(
+  document: Text,
+  position: tauriCommands.LspPosition,
+): number {
+  const lineNumber = Math.min(Math.max(position.line + 1, 1), document.lines);
+  const line = document.line(lineNumber);
+  return line.from + Math.min(Math.max(position.character, 0), line.length);
+}
+
+function mapSeverity(
+  severity: number | undefined,
+): Diagnostic["severity"] {
+  switch (severity) {
+    case 1:
+      return "error";
+    case 2:
+      return "warning";
+    case 3:
+    case 4:
+      return "info";
+    default:
+      return "error";
+  }
+}
 
 const LSP_KIND_TO_TYPE: Record<number, Completion["type"]> = {
   3: "function",
@@ -222,4 +249,42 @@ export function jqCompletionSource(documentUri: string): CompletionSource {
       validFor: /[\w$@-]*/,
     };
   };
+}
+
+export function jqLintSource(
+  documentUri: string,
+  onDiagnosticsChange?: (diagnostics: tauriCommands.LspDiagnostic[]) => void,
+) {
+  return linter(
+    async (view: { state: { doc: Text } }) => {
+      const text = view.state.doc.toString();
+
+      if (!text.trim()) {
+        onDiagnosticsChange?.([]);
+        return [];
+      }
+
+      try {
+        const diagnostics = await tauriCommands.lspDidChange(documentUri, text);
+        onDiagnosticsChange?.(diagnostics);
+
+        return diagnostics.map((diagnostic): Diagnostic => {
+          const from = getOffsetFromPosition(view.state.doc, diagnostic.range.start);
+          const to = Math.max(from, getOffsetFromPosition(view.state.doc, diagnostic.range.end));
+
+          return {
+            from,
+            to,
+            message: diagnostic.message,
+            severity: mapSeverity(diagnostic.severity),
+            source: diagnostic.source,
+          };
+        });
+      } catch {
+        onDiagnosticsChange?.([]);
+        return [];
+      }
+    },
+    { delay: 300 },
+  );
 }
