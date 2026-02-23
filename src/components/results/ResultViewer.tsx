@@ -145,9 +145,11 @@ export function ResultViewer({
             <RawJsonView results={results} />
           </div>
 
-          <div className={cn("h-full min-h-0", viewMode !== "tree" && "hidden")}>
-            <ResultTreeViewer resultCount={resultCount} resultTreeReady={resultTreeReady} />
-          </div>
+          {viewMode === "tree" ? (
+            <div className="h-full min-h-0">
+              <ResultTreeViewer resultCount={resultCount} resultTreeReady={resultTreeReady} />
+            </div>
+          ) : null}
         </div>
       ) : null}
     </div>

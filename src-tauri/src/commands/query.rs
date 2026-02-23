@@ -10,7 +10,7 @@ const MAX_QUERY_RESULT_CHARS: usize = 1_000_000;
 const QUERY_TIMEOUT: Duration = Duration::from_secs(60);
 
 #[derive(Debug, Clone, Serialize)]
-#[serde(tag = "type")]
+#[serde(tag = "type", rename_all_fields = "camelCase")]
 pub enum QueryResult {
     Compiling,
     Running,

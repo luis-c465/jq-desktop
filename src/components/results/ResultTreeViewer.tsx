@@ -1,5 +1,5 @@
 import { Loader2 } from "lucide-react";
-import { useCallback, useMemo, useRef } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { Tree, type NodeApi, type NodeRendererProps } from "react-arborist";
 
 import { JsonTreeNode } from "~/components/json-tree/JsonTreeNode";
@@ -17,13 +17,13 @@ type ResultTreeViewerProps = {
 };
 
 export function ResultTreeViewer({ resultCount, resultTreeReady }: ResultTreeViewerProps) {
-  const containerRef = useRef<HTMLDivElement>(null);
+  const [containerElement, setContainerElement] = useState<HTMLDivElement | null>(null);
   const { treeData, loadingNodeIds, loadChildren, activateNode } = useResultTreeData(
     resultCount,
     resultTreeReady,
   );
   const hasData = resultTreeReady && resultCount > 0;
-  const { width, height } = useViewportSize(containerRef, hasData);
+  const { width, height } = useViewportSize(containerElement, hasData);
   const isInitialLoading = hasData && treeData.length === 0 && loadingNodeIds.has(RESULT_TREE_ROOT_PATH);
 
   const renderNode = useMemo(
@@ -67,24 +67,26 @@ export function ResultTreeViewer({ resultCount, resultTreeReady }: ResultTreeVie
   }
 
   return (
-    <div ref={containerRef} className="flex-1 min-h-0 w-full">
-      {width > 0 && height > 0 ? (
-        <Tree<TreeNode>
-          data={treeData}
-          width={width}
-          height={height}
-          rowHeight={28}
-          overscanCount={20}
-          indent={20}
-          disableDrag
-          disableDrop
-          openByDefault={false}
-          onToggle={onToggle}
-          onActivate={onActivate}
-        >
-          {renderNode}
-        </Tree>
-      ) : null}
+    <div className="flex h-full min-h-0 flex-col">
+      <div ref={setContainerElement} className="flex-1 min-h-0 w-full">
+        {width > 0 && height > 0 ? (
+          <Tree<TreeNode>
+            data={treeData}
+            width={width}
+            height={height}
+            rowHeight={28}
+            overscanCount={20}
+            indent={20}
+            disableDrag
+            disableDrop
+            openByDefault={false}
+            onToggle={onToggle}
+            onActivate={onActivate}
+          >
+            {renderNode}
+          </Tree>
+        ) : null}
+      </div>
     </div>
   );
 }

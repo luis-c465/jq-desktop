@@ -1,4 +1,4 @@
-import { useEffect, useState, type RefObject } from "react";
+import { useEffect, useState } from "react";
 
 export type ViewportSize = {
   width: number;
@@ -6,7 +6,7 @@ export type ViewportSize = {
 };
 
 export function useViewportSize(
-  containerRef: RefObject<HTMLDivElement | null>,
+  container: HTMLDivElement | null,
   enabled: boolean,
 ): ViewportSize {
   const [size, setSize] = useState<ViewportSize>({ width: 0, height: 0 });
@@ -17,8 +17,8 @@ export function useViewportSize(
       return;
     }
 
-    const container = containerRef.current;
     if (!container) {
+      setSize({ width: 0, height: 0 });
       return;
     }
 
@@ -34,7 +34,7 @@ export function useViewportSize(
     return () => {
       observer.disconnect();
     };
-  }, [containerRef, enabled]);
+  }, [container, enabled]);
 
   return size;
 }

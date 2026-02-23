@@ -1,5 +1,5 @@
 import { FileJson } from "lucide-react";
-import { useCallback, useMemo, useRef } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { Tree, type NodeApi, type NodeRendererProps } from "react-arborist";
 
 import { Button } from "~/components/ui/button";
@@ -17,10 +17,10 @@ type JsonTreeViewerProps = {
 };
 
 export function JsonTreeViewer({ rootNodes, fileName, onOpenFile }: JsonTreeViewerProps) {
-  const containerRef = useRef<HTMLDivElement>(null);
+  const [containerElement, setContainerElement] = useState<HTMLDivElement | null>(null);
   const nodes = rootNodes ?? [];
   const hasData = nodes.length > 0;
-  const { width, height } = useViewportSize(containerRef, hasData);
+  const { width, height } = useViewportSize(containerElement, hasData);
   const { treeData, loadingNodeIds, loadChildren, activateNode } = useTreeData(nodes);
 
   const renderNode = useMemo(
@@ -67,7 +67,7 @@ export function JsonTreeViewer({ rootNodes, fileName, onOpenFile }: JsonTreeView
           ) : null}
         </div>
       ) : (
-        <div ref={containerRef} className="flex-1 min-h-0 w-full">
+        <div ref={setContainerElement} className="flex-1 min-h-0 w-full">
           {width > 0 && height > 0 ? (
             <Tree<TreeNode>
               data={treeData}
