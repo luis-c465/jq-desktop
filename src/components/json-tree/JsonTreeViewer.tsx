@@ -1,8 +1,9 @@
 import { FileJson } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState, type RefObject } from "react";
+import { useCallback, useMemo, useRef } from "react";
 import { Tree, type NodeApi, type NodeRendererProps } from "react-arborist";
 
 import { Button } from "~/components/ui/button";
+import { useViewportSize } from "~/hooks/useViewportSize";
 import type { TreeNodeInfo } from "~/types";
 
 import { JsonTreeNode } from "./JsonTreeNode";
@@ -14,42 +15,6 @@ type JsonTreeViewerProps = {
   fileName?: string;
   onOpenFile?: () => void;
 };
-
-type ViewportSize = {
-  width: number;
-  height: number;
-};
-
-function useViewportSize(containerRef: RefObject<HTMLDivElement | null>, enabled: boolean): ViewportSize {
-  const [size, setSize] = useState<ViewportSize>({ width: 0, height: 0 });
-
-  useEffect(() => {
-    if (!enabled) {
-      setSize({ width: 0, height: 0 });
-      return;
-    }
-
-    const container = containerRef.current;
-    if (!container) {
-      return;
-    }
-
-    const update = () => {
-      const { width, height } = container.getBoundingClientRect();
-      setSize({ width, height });
-    };
-
-    update();
-    const observer = new ResizeObserver(update);
-    observer.observe(container);
-
-    return () => {
-      observer.disconnect();
-    };
-  }, [containerRef, enabled]);
-
-  return size;
-}
 
 export function JsonTreeViewer({ rootNodes, fileName, onOpenFile }: JsonTreeViewerProps) {
   const containerRef = useRef<HTMLDivElement>(null);

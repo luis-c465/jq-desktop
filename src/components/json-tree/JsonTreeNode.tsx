@@ -10,6 +10,7 @@ import { isLoadMoreNode, type TreeNode } from "./tree-utils";
 
 type JsonTreeNodeProps = NodeRendererProps<TreeNode> & {
   loadingNodeIds: Set<string>;
+  getValueFn?: (path: string) => Promise<string>;
 };
 
 function valuePreviewClass(valueType: string): string {
@@ -30,7 +31,13 @@ function valuePreviewClass(valueType: string): string {
   }
 }
 
-export function JsonTreeNode({ node, style, dragHandle, loadingNodeIds }: JsonTreeNodeProps) {
+export function JsonTreeNode({
+  node,
+  style,
+  dragHandle,
+  loadingNodeIds,
+  getValueFn,
+}: JsonTreeNodeProps) {
   const isLoadMore = isLoadMoreNode(node.data);
   const isLoading = loadingNodeIds.has(node.id);
 
@@ -112,7 +119,7 @@ export function JsonTreeNode({ node, style, dragHandle, loadingNodeIds }: JsonTr
             title="Copy value"
             onClick={(event: MouseEvent<HTMLButtonElement>) => {
               event.stopPropagation();
-              void getNodeValue(node.data.data.id)
+              void (getValueFn ?? getNodeValue)(node.data.data.id)
                 .then((value) => navigator.clipboard.writeText(value))
                 .then(() => {
                   toast.success("Value copied to clipboard", { duration: 3000 });
