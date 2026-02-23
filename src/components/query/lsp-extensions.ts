@@ -3,7 +3,9 @@ import type {
   CompletionContext,
   CompletionSource,
 } from "@codemirror/autocomplete";
+import { hoverTooltip, type Extension, type Tooltip, type EditorView } from "@codemirror/view";
 
+import * as lspService from "~/services/lsp-service";
 import * as tauriCommands from "~/services/tauri-commands";
 
 const LSP_KIND_TO_TYPE: Record<number, Completion["type"]> = {
@@ -43,6 +45,113 @@ function documentationToInfo(markdown: string | null): Completion["info"] {
     container.textContent = markdown;
     return container;
   };
+}
+
+function markdownToDom(markdown: string): HTMLElement {
+  const container = document.createElement("div");
+  container.className = "max-w-sm whitespace-pre-wrap text-xs";
+
+  const lines = markdown.split(/\r?\n/);
+  let inCodeBlock = false;
+  let textBuffer: string[] = [];
+  let codeBuffer: string[] = [];
+
+  const flushText = () => {
+    if (textBuffer.length === 0) {
+      return;
+    }
+
+    const paragraph = document.createElement("p");
+    paragraph.className = "mb-2 last:mb-0";
+    paragraph.textContent = textBuffer.join("\n").trim();
+    container.appendChild(paragraph);
+    textBuffer = [];
+  };
+
+  const flushCode = () => {
+    if (codeBuffer.length === 0) {
+      return;
+    }
+
+    const pre = document.createElement("pre");
+    pre.className = "mb-2 overflow-x-auto rounded bg-muted px-2 py-1 font-mono text-[11px] last:mb-0";
+    const code = document.createElement("code");
+    code.textContent = codeBuffer.join("\n");
+    pre.appendChild(code);
+    container.appendChild(pre);
+    codeBuffer = [];
+  };
+
+  for (const line of lines) {
+    if (line.trimStart().startsWith("```")) {
+      if (inCodeBlock) {
+        flushCode();
+      } else {
+        flushText();
+      }
+
+      inCodeBlock = !inCodeBlock;
+      continue;
+    }
+
+    if (inCodeBlock) {
+      codeBuffer.push(line);
+    } else {
+      textBuffer.push(line);
+    }
+  }
+
+  if (inCodeBlock) {
+    flushCode();
+  } else {
+    flushText();
+  }
+
+  return container;
+}
+
+function getHoverRange(view: EditorView, pos: number): { from: number; to: number } {
+  const doc = view.state.doc;
+  const content = doc.toString();
+  const charMatcher = /[\w$@-]/;
+
+  let from = pos;
+  let to = pos;
+
+  while (from > 0 && charMatcher.test(content[from - 1] ?? "")) {
+    from -= 1;
+  }
+
+  while (to < content.length && charMatcher.test(content[to] ?? "")) {
+    to += 1;
+  }
+
+  return { from, to };
+}
+
+export function jqHoverTooltip(documentUri: string): Extension {
+  return hoverTooltip(async (view: EditorView, pos: number): Promise<Tooltip | null> => {
+    const line = view.state.doc.lineAt(pos);
+    const lineNumber = line.number - 1;
+    const character = pos - line.from;
+    const markdown = await lspService.getHover(documentUri, lineNumber, character);
+
+    if (!markdown) {
+      return null;
+    }
+
+    const { from, to } = getHoverRange(view, pos);
+
+    return {
+      pos: from,
+      end: to,
+      above: true,
+      create() {
+        const dom = markdownToDom(markdown);
+        return { dom };
+      },
+    };
+  });
 }
 
 export function jqCompletionSource(documentUri: string): CompletionSource {

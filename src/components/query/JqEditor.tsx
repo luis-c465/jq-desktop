@@ -19,7 +19,7 @@ import {
 import { cn } from "~/lib/utils";
 
 import { jqLanguage } from "./jq-language";
-import { jqCompletionSource } from "./lsp-extensions";
+import { jqCompletionSource, jqHoverTooltip } from "./lsp-extensions";
 
 const DOCUMENT_URI = "file:///query.jq";
 
@@ -104,6 +104,7 @@ export const JqEditor = forwardRef<JqEditorHandle, JqEditorProps>(function JqEdi
         activateOnTyping: true,
         override: [jqCompletionSource(DOCUMENT_URI)],
       }),
+      jqHoverTooltip(DOCUMENT_URI),
       EditorView.updateListener.of((update: ViewUpdate) => {
         if (update.docChanged) {
           onChange(update.state.doc.toString());

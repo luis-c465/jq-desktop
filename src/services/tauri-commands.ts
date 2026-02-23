@@ -30,6 +30,16 @@ export type LspCompletionItem = {
   documentation?: string | { kind?: string; value: string } | null;
 };
 
+export type LspHoverContent =
+  | string
+  | { kind?: string; value: string }
+  | Array<string | { kind?: string; value: string }>;
+
+export type LspHoverResult = {
+  contents: LspHoverContent;
+  range?: LspRange;
+};
+
 export async function loadFile(
   path: string,
   onProgress: (progress: LoadProgress) => void,
@@ -88,6 +98,10 @@ export async function lspDidChange(uri: string, text: string): Promise<LspDiagno
   return invoke<LspDiagnostic[]>("lsp_did_change", { uri, text });
 }
 
+export async function lspInitialize(): Promise<void> {
+  await invoke("lsp_initialize");
+}
+
 export async function cancelQuery(): Promise<void> {
   await invoke("cancel_query");
 }
@@ -114,4 +128,20 @@ export async function lspComplete(
     line,
     character,
   });
+}
+
+export async function lspHover(
+  uri: string,
+  line: number,
+  character: number,
+): Promise<LspHoverResult | null> {
+  return invoke<LspHoverResult | null>("lsp_hover", {
+    uri,
+    line,
+    character,
+  });
+}
+
+export async function lspShutdown(): Promise<void> {
+  await invoke("lsp_shutdown");
 }
