@@ -1,4 +1,4 @@
-import { AlertCircle, Code2, Copy, List, Loader2, Search } from "lucide-react";
+import { AlertCircle, Code2, Copy, List, Loader2, Search, TreePine } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
@@ -8,6 +8,7 @@ import { cn } from "~/lib/utils";
 
 import { RawJsonView } from "./RawJsonView";
 import { ResultList } from "./ResultList";
+import { ResultTreeViewer } from "./ResultTreeViewer";
 
 type ResultViewerProps = {
   results: QueryResultItem[];
@@ -15,9 +16,10 @@ type ResultViewerProps = {
   resultCount: number;
   elapsedMs: number | null;
   error: string | null;
+  resultTreeReady?: boolean;
 };
 
-type ViewMode = "list" | "raw";
+type ViewMode = "list" | "raw" | "tree";
 
 function getErrorMessage(error: unknown): string {
   if (error instanceof Error && error.message) {
@@ -33,6 +35,7 @@ export function ResultViewer({
   resultCount,
   elapsedMs,
   error,
+  resultTreeReady = false,
 }: ResultViewerProps) {
   const [viewMode, setViewMode] = useState<ViewMode>("list");
 
@@ -84,6 +87,17 @@ export function ResultViewer({
 
           <Button
             size="sm"
+            variant={viewMode === "tree" ? "secondary" : "ghost"}
+            onClick={() => {
+              setViewMode("tree");
+            }}
+          >
+            <TreePine className="size-3.5" />
+            Tree
+          </Button>
+
+          <Button
+            size="sm"
             variant="ghost"
             disabled={results.length === 0}
             onClick={() => {
@@ -122,12 +136,18 @@ export function ResultViewer({
       ) : null}
 
       {!error && results.length > 0 ? (
-        <div className={cn("min-h-0 flex-1", viewMode === "raw" && "bg-card")}>
-          {viewMode === "list" ? (
+        <div className="min-h-0 flex-1">
+          <div className={cn("h-full min-h-0", viewMode !== "list" && "hidden")}>
             <ResultList results={results} isRunning={isRunning} />
-          ) : (
+          </div>
+
+          <div className={cn("h-full min-h-0", viewMode !== "raw" && "hidden", "bg-card")}>
             <RawJsonView results={results} />
-          )}
+          </div>
+
+          <div className={cn("h-full min-h-0", viewMode !== "tree" && "hidden")}>
+            <ResultTreeViewer resultCount={resultCount} resultTreeReady={resultTreeReady} />
+          </div>
         </div>
       ) : null}
     </div>
