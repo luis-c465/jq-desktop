@@ -45,21 +45,24 @@ Linux)
 	esac
 	;;
 Darwin)
-	GOOS="darwin"
-	case "$ARCH" in
-	arm64)
-		GOARCH="arm64"
-		TARGET="aarch64-apple-darwin"
-		;;
-	x86_64)
-		GOARCH="amd64"
-		TARGET="x86_64-apple-darwin"
-		;;
-	*)
-		echo "Error: unsupported macOS architecture '$ARCH'" >&2
-		exit 1
-		;;
-	esac
+	# Build both architectures so either Tauri target (aarch64 or x86_64) is satisfied
+	# regardless of which machine (Apple Silicon or Intel) runs the build.
+	echo "Building jq-lsp sidecar for aarch64-apple-darwin -> $BIN_DIR/jq-lsp-aarch64-apple-darwin"
+	(
+		cd "$JQ_LSP_DIR"
+		GOOS="darwin" GOARCH="arm64" go build -o "$BIN_DIR/jq-lsp-aarch64-apple-darwin" .
+	)
+	chmod +x "$BIN_DIR/jq-lsp-aarch64-apple-darwin"
+	echo "Built jq-lsp sidecar: $BIN_DIR/jq-lsp-aarch64-apple-darwin"
+
+	echo "Building jq-lsp sidecar for x86_64-apple-darwin -> $BIN_DIR/jq-lsp-x86_64-apple-darwin"
+	(
+		cd "$JQ_LSP_DIR"
+		GOOS="darwin" GOARCH="amd64" go build -o "$BIN_DIR/jq-lsp-x86_64-apple-darwin" .
+	)
+	chmod +x "$BIN_DIR/jq-lsp-x86_64-apple-darwin"
+	echo "Built jq-lsp sidecar: $BIN_DIR/jq-lsp-x86_64-apple-darwin"
+	exit 0
 	;;
 MINGW* | MSYS* | CYGWIN*)
 	GOOS="windows"
