@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import type { QueryResultItem } from "~/components/query/useQueryExecution";
 import { Button } from "~/components/ui/button";
 import { cn } from "~/lib/utils";
+import { copyToClipboard } from "~/services/tauri-commands";
 
 import { RawJsonView } from "./RawJsonView";
 import { ResultList } from "./ResultList";
@@ -102,8 +103,7 @@ export function ResultViewer({
             disabled={results.length === 0}
             onClick={() => {
               const output = results.map((result) => result.value).join("\n");
-              void navigator.clipboard
-                .writeText(output)
+              void copyToClipboard(output)
                 .then(() => {
                   toast.success("All results copied");
                 })

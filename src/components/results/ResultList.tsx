@@ -4,6 +4,7 @@ import { toast } from "sonner";
 
 import type { QueryResultItem } from "~/components/query/useQueryExecution";
 import { cn } from "~/lib/utils";
+import { copyToClipboard } from "~/services/tauri-commands";
 
 type ResultListProps = {
   results: QueryResultItem[];
@@ -89,8 +90,7 @@ export function ResultList({ results, isRunning }: ResultListProps) {
                 className="absolute inset-x-0 flex h-8 items-center gap-2 border-b px-3 text-left font-mono text-xs hover:bg-accent"
                 style={{ top: absoluteIndex * ROW_HEIGHT }}
                 onClick={() => {
-                  void navigator.clipboard
-                    .writeText(item.value)
+                  void copyToClipboard(item.value)
                     .then(() => {
                       toast.success("Result copied");
                     })

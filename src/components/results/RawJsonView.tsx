@@ -2,6 +2,7 @@ import { Copy } from "lucide-react";
 import { toast } from "sonner";
 
 import type { QueryResultItem } from "~/components/query/useQueryExecution";
+import { copyToClipboard } from "~/services/tauri-commands";
 import { Button } from "~/components/ui/button";
 import { ScrollArea } from "~/components/ui/scroll-area";
 
@@ -34,8 +35,7 @@ export function RawJsonView({ results }: RawJsonViewProps) {
           size="sm"
           variant="secondary"
           onClick={() => {
-            void navigator.clipboard
-              .writeText(allOutput)
+            void copyToClipboard(allOutput)
               .then(() => {
                 toast.success("All results copied");
               })

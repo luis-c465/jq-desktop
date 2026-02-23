@@ -4,7 +4,7 @@ import type { NodeRendererProps } from "react-arborist";
 import { toast } from "sonner";
 
 import { cn } from "~/lib/utils";
-import { getNodeValue } from "~/services/tauri-commands";
+import { copyToClipboard, getNodeValue } from "~/services/tauri-commands";
 
 import { isLoadMoreNode, type TreeNode } from "./tree-utils";
 
@@ -100,8 +100,7 @@ export function JsonTreeNode({
             title="Copy JSON path"
             onClick={(event: MouseEvent<HTMLButtonElement>) => {
               event.stopPropagation();
-              void navigator.clipboard
-                .writeText(node.data.data.id)
+              void copyToClipboard(node.data.data.id)
                 .then(() => {
                   toast.success("Path copied to clipboard", { duration: 3000 });
                 })
@@ -120,7 +119,7 @@ export function JsonTreeNode({
             onClick={(event: MouseEvent<HTMLButtonElement>) => {
               event.stopPropagation();
               void (getValueFn ?? getNodeValue)(node.data.data.id)
-                .then((value) => navigator.clipboard.writeText(value))
+                .then((value) => copyToClipboard(value))
                 .then(() => {
                   toast.success("Value copied to clipboard", { duration: 3000 });
                 })

@@ -1,4 +1,5 @@
 import { Channel, invoke } from "@tauri-apps/api/core";
+import { writeText } from "@tauri-apps/plugin-clipboard-manager";
 
 import type { ExpandResult, LoadProgress, QueryResult } from "~/types";
 
@@ -66,4 +67,8 @@ export async function closeFile(): Promise<void> {
 
 export async function getFileSize(path: string): Promise<number> {
   return invoke<number>("get_file_size", { path });
+}
+
+export async function copyToClipboard(text: string): Promise<void> {
+  await writeText(text);
 }
