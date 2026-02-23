@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
+    "build:sidecar": "bash scripts/build-sidecar.sh",
     "typecheck": "tsgo --noEmit",
     "typecheck:tauri": "cargo check --manifest-path src-tauri/Cargo.toml",
     "preview": "vite preview",

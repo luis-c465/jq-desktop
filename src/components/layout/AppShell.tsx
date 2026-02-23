@@ -34,10 +34,14 @@ export function AppShell() {
   const queryEditorRef = useRef<JqEditorHandle | null>(null);
 
   useEffect(() => {
-    void tauriCommands.lspInitialize();
+    void tauriCommands.lspInitialize().catch((error) => {
+      console.error("Failed to initialize jq-lsp", error);
+    });
 
     return () => {
-      void tauriCommands.lspShutdown();
+      void tauriCommands.lspShutdown().catch((error) => {
+        console.error("Failed to shutdown jq-lsp", error);
+      });
     };
   }, []);
 
