@@ -1,5 +1,7 @@
 # jq-desktop
 
+<img src="assets/jq_icon.svg" alt="jqd icon badge" width="96" />
+
 ![jq-desktop](assets/main.png)
 
 A cross-platform desktop app for interactively exploring and querying JSON files using [jq](https://jqlang.org). Load large JSON files, write jq queries with real-time validation, and explore results in a tree, list, or raw view — all without leaving your desktop.
