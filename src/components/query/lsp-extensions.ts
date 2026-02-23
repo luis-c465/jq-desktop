@@ -10,6 +10,11 @@ import type { Extension, Text } from "@codemirror/state";
 import * as lspService from "~/services/lsp-service";
 import * as tauriCommands from "~/services/tauri-commands";
 
+const HOVER_CONTAINER_CLASS = "max-w-sm p-3 text-xs text-inherit";
+const HOVER_PARAGRAPH_CLASS = "mb-2 last:mb-0 whitespace-pre-wrap leading-relaxed";
+const HOVER_CODE_BLOCK_CLASS =
+  "mb-2 last:mb-0 overflow-x-auto rounded-md bg-background/15 px-3 py-2 font-mono text-[11px] leading-relaxed";
+
 function getOffsetFromPosition(
   document: Text,
   position: tauriCommands.LspPosition,
@@ -70,7 +75,7 @@ function appendMarkdownFragment(container: HTMLElement, block: string): void {
   const codeFenceMatch = /^```(?:\w+)?\n([\s\S]*?)\n```$/m.exec(trimmed);
   if (codeFenceMatch) {
     const pre = document.createElement("pre");
-    pre.className = "overflow-x-auto rounded-sm bg-muted/50 p-2 font-mono text-[11px]";
+    pre.className = HOVER_CODE_BLOCK_CLASS;
     const code = document.createElement("code");
     code.textContent = codeFenceMatch[1] ?? "";
     pre.append(code);
@@ -91,7 +96,7 @@ function documentationToInfo(markdown: string | null): Completion["info"] {
 
   return () => {
     const container = document.createElement("div");
-    container.className = "max-w-xs space-y-2 text-xs";
+    container.className = "max-w-xs p-2 space-y-2 text-xs text-inherit";
 
     markdown
       .split(/\n\n+/)
@@ -105,7 +110,7 @@ function documentationToInfo(markdown: string | null): Completion["info"] {
 
 function markdownToDom(markdown: string): HTMLElement {
   const container = document.createElement("div");
-  container.className = "max-w-sm whitespace-pre-wrap text-xs";
+  container.className = HOVER_CONTAINER_CLASS;
 
   const lines = markdown.split(/\r?\n/);
   let inCodeBlock = false;
@@ -118,7 +123,7 @@ function markdownToDom(markdown: string): HTMLElement {
     }
 
     const paragraph = document.createElement("p");
-    paragraph.className = "mb-2 last:mb-0";
+    paragraph.className = HOVER_PARAGRAPH_CLASS;
     paragraph.textContent = textBuffer.join("\n").trim();
     container.appendChild(paragraph);
     textBuffer = [];
@@ -130,7 +135,7 @@ function markdownToDom(markdown: string): HTMLElement {
     }
 
     const pre = document.createElement("pre");
-    pre.className = "mb-2 overflow-x-auto rounded bg-muted px-2 py-1 font-mono text-[11px] last:mb-0";
+    pre.className = HOVER_CODE_BLOCK_CLASS;
     const code = document.createElement("code");
     code.textContent = codeBuffer.join("\n");
     pre.appendChild(code);

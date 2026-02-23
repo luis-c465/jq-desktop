@@ -9,7 +9,7 @@ import {
   EditorState,
   type Extension,
 } from "@codemirror/state";
-import { EditorView, placeholder } from "@codemirror/view";
+import { EditorView, placeholder, tooltips } from "@codemirror/view";
 import type { ViewUpdate } from "@codemirror/view";
 import {
   forwardRef,
@@ -56,6 +56,14 @@ const editorTheme = EditorView.theme({
   },
   ".cm-focused": {
     outline: "none",
+  },
+  ".cm-tooltip-hover": {
+    zIndex: "50",
+    border: "none",
+    borderRadius: "var(--radius-md)",
+    backgroundColor: "var(--foreground)",
+    color: "var(--background)",
+    boxShadow: "0 10px 30px color-mix(in oklch, var(--foreground) 22%, transparent)",
   },
 }, { dark: true });
 
@@ -165,6 +173,7 @@ export const JqEditor = forwardRef<JqEditorHandle, JqEditorProps>(function JqEdi
       runOnModEnter,
       placeholder("Type a jq expression... (e.g., .users[] | select(.age > 30))"),
       editableCompartment.of(EditorView.editable.of(!disabled)),
+      tooltips({ parent: document.body }),
       autocompletion({
         activateOnTyping: true,
         override: [jqCompletionSource(DOCUMENT_URI)],
