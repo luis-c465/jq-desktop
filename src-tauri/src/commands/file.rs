@@ -7,7 +7,6 @@ use tauri::ipc::Channel;
 use tokio::fs::File;
 use tokio::io::AsyncReadExt;
 
-const MAX_FILE_SIZE_BYTES: u64 = 4 * 1024 * 1024 * 1024;
 const READ_CHUNK_SIZE: usize = 64 * 1024;
 const PROGRESS_EMIT_EVERY_BYTES: u64 = 1024 * 1024;
 
@@ -101,10 +100,6 @@ async fn load_file_impl(
 ) -> Result<(), AppError> {
     let metadata = tokio::fs::metadata(path).await?;
     let file_size = metadata.len();
-
-    if file_size > MAX_FILE_SIZE_BYTES {
-        return Err(AppError::FileTooLarge(file_size));
-    }
 
     let mut file = File::open(path).await?;
     let mut bytes = Vec::with_capacity(file_size.min(usize::MAX as u64) as usize);
