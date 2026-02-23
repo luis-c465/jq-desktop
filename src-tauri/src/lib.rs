@@ -2,6 +2,7 @@ mod commands;
 mod error;
 mod jq_engine;
 mod json_store;
+mod result_store;
 mod state;
 mod tree_nav;
 

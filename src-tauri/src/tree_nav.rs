@@ -171,7 +171,11 @@ fn value_to_node_info(parent_path: &str, key: &str, value: &Value) -> TreeNodeIn
     }
 }
 
-fn value_to_indexed_node_info(parent_path: &str, index: usize, value: &Value) -> TreeNodeInfo {
+pub(crate) fn value_to_indexed_node_info(
+    parent_path: &str,
+    index: usize,
+    value: &Value,
+) -> TreeNodeInfo {
     TreeNodeInfo {
         id: format!("{parent_path}[{index}]"),
         key: index.to_string(),
