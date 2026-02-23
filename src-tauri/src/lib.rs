@@ -3,6 +3,7 @@ mod error;
 mod jq_engine;
 mod json_store;
 mod state;
+mod tree_nav;
 
 use crate::state::AppState;
 
