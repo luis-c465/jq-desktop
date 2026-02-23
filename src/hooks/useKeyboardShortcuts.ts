@@ -39,6 +39,11 @@ export function useKeyboardShortcuts({
         if (target instanceof HTMLTextAreaElement) {
           return;
         }
+
+        if (target instanceof HTMLElement && target.closest(".cm-editor")) {
+          return;
+        }
+
         event.preventDefault();
         focusQueryEditor();
         onExecuteQuery();

@@ -1,4 +1,4 @@
-import { useCallback, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 
 import {
   ResizableHandle,
@@ -8,11 +8,13 @@ import {
 import { Separator } from "~/components/ui/separator";
 import { LoadingOverlay } from "~/components/LoadingOverlay";
 import { JsonTreeViewer } from "~/components/json-tree/JsonTreeViewer";
+import type { JqEditorHandle } from "~/components/query/JqEditor";
 import { QueryEditor } from "~/components/query/QueryEditor";
 import { useQueryExecution } from "~/components/query/useQueryExecution";
 import { ResultViewer } from "~/components/results/ResultViewer";
 import { useFileState } from "~/hooks/useFileState";
 import { useKeyboardShortcuts } from "~/hooks/useKeyboardShortcuts";
+import * as tauriCommands from "~/services/tauri-commands";
 
 import { StatusBar } from "./StatusBar";
 import { Toolbar } from "./Toolbar";
@@ -29,7 +31,15 @@ export function AppShell() {
   } = useFileState();
   const hasFileLoaded = Boolean(fileInfo?.loaded);
   const queryExecution = useQueryExecution(hasFileLoaded);
-  const queryEditorRef = useRef<HTMLTextAreaElement | null>(null);
+  const queryEditorRef = useRef<JqEditorHandle | null>(null);
+
+  useEffect(() => {
+    void tauriCommands.lspInitialize();
+
+    return () => {
+      void tauriCommands.lspShutdown();
+    };
+  }, []);
 
   const handleOpenFile = useCallback(() => {
     void openFile();
@@ -87,7 +97,7 @@ export function AppShell() {
                 <QueryEditor
                   hasFileLoaded={hasFileLoaded}
                   queryExecution={queryExecution}
-                  textareaRef={queryEditorRef}
+                  editorRef={queryEditorRef}
                 />
               </ResizablePanel>
 
