@@ -3,24 +3,25 @@ use crate::json_store::TreeNodeInfo;
 use crate::state::AppState;
 use serde::Serialize;
 use std::path::Path;
+use std::sync::Arc;
 use tauri::ipc::Channel;
-use tokio::fs::File;
-use tokio::io::AsyncReadExt;
-
-const READ_CHUNK_SIZE: usize = 64 * 1024;
-const PROGRESS_EMIT_EVERY_BYTES: u64 = 1024 * 1024;
 
 #[derive(Debug, Clone, Serialize)]
 #[serde(tag = "type", rename_all_fields = "camelCase")]
 pub enum LoadProgress {
-    Reading { bytes_read: u64, total_bytes: u64 },
+    Reading {
+        bytes_read: u64,
+        total_bytes: u64,
+    },
     Parsing,
     Complete {
         root_nodes: Vec<TreeNodeInfo>,
         file_name: String,
         file_size: u64,
     },
-    Error { message: String },
+    Error {
+        message: String,
+    },
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -101,41 +102,28 @@ async fn load_file_impl(
     let metadata = tokio::fs::metadata(path).await?;
     let file_size = metadata.len();
 
-    let mut file = File::open(path).await?;
-    let mut bytes = Vec::with_capacity(file_size.min(usize::MAX as u64) as usize);
-    let mut chunk = vec![0_u8; READ_CHUNK_SIZE];
-    let mut bytes_read: u64 = 0;
-    let mut last_emit = 0;
-
-    loop {
-        let read_count = file.read(&mut chunk).await?;
-        if read_count == 0 {
-            break;
-        }
-
-        bytes.extend_from_slice(&chunk[..read_count]);
-        bytes_read += read_count as u64;
-
-        let should_emit = bytes_read == file_size || bytes_read.saturating_sub(last_emit) >= PROGRESS_EMIT_EVERY_BYTES;
-        if should_emit {
-            last_emit = bytes_read;
-            let _ = on_progress.send(LoadProgress::Reading {
-                bytes_read,
-                total_bytes: file_size,
-            });
-        }
-    }
+    let _ = on_progress.send(LoadProgress::Reading {
+        bytes_read: file_size,
+        total_bytes: file_size,
+    });
 
     let _ = on_progress.send(LoadProgress::Parsing);
 
-    let parsed: serde_json::Value = serde_json::from_slice(&bytes)?;
+    let path_owned = path.to_string();
+    let parsed: serde_json::Value = tokio::task::spawn_blocking(move || {
+        let file = std::fs::File::open(path_owned)?;
+        let reader = std::io::BufReader::new(file);
+        let parsed = serde_json::from_reader(reader)?;
+        Ok::<_, AppError>(parsed)
+    })
+    .await
+    .map_err(|error| AppError::ParseError(format!("Failed to parse JSON: {error}")))??;
 
     let root_nodes = {
-        let mut store = state
-            .json_store
-            .lock()
-            .map_err(|_| AppError::ParseError("Failed to acquire application state lock".to_string()))?;
-        store.data = Some(parsed);
+        let mut store = state.json_store.lock().map_err(|_| {
+            AppError::ParseError("Failed to acquire application state lock".to_string())
+        })?;
+        store.data = Some(Arc::new(parsed));
         store.file_path = Some(path.to_string());
         store.file_size = Some(file_size);
         store.get_root_nodes()?

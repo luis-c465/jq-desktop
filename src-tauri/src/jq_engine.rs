@@ -17,26 +17,35 @@ impl JqEngine {
     }
 
     pub fn execute(query: &str, input: &Value) -> Result<Vec<JqOutput>, AppError> {
+        let mut outputs = Vec::new();
+        Self::execute_stream(query, input, |output| {
+            outputs.push(output);
+            Ok(true)
+        })?;
+        Ok(outputs)
+    }
+
+    pub fn execute_stream<F>(query: &str, input: &Value, mut on_output: F) -> Result<(), AppError>
+    where
+        F: FnMut(JqOutput) -> Result<bool, AppError>,
+    {
         let filter = build_filter(query)?;
-        let input_json = serde_json::to_vec(input)
-            .map_err(|error| AppError::JqRuntimeError(error.to_string()))?;
-        let input_value = jaq_json::read::parse_single(&input_json)
-            .map_err(|error| AppError::JqRuntimeError(error.to_string()))?;
+        let input_value = to_jaq_value(input);
         let ctx = Ctx::<data::JustLut<jaq_json::Val>>::new(&filter.lut, Vars::new([]));
 
-        filter
-            .id
-            .run((ctx, input_value))
-            .map(|result| {
-                let value = result
-                    .map_err(|error| AppError::JqRuntimeError(format!("{error:?}")))?
-                    .to_string();
-                Ok(JqOutput {
-                    value_type: infer_value_type(&value),
-                    value,
-                })
-            })
-            .collect()
+        for result in filter.id.run((ctx, input_value)) {
+            let value = result.map_err(|error| AppError::JqRuntimeError(format!("{error:?}")))?;
+            let output = JqOutput {
+                value_type: infer_value_type(&value),
+                value: value.to_string(),
+            };
+
+            if !on_output(output)? {
+                break;
+            }
+        }
+
+        Ok(())
     }
 }
 
@@ -65,20 +74,51 @@ fn format_error_items<T: core::fmt::Debug>(items: impl IntoIterator<Item = T>) -
         .join("; ")
 }
 
-fn infer_value_type(value: &str) -> String {
-    if let Ok(parsed) = serde_json::from_str::<Value>(value) {
-        return match parsed {
-            Value::Object(_) => "object",
-            Value::Array(_) => "array",
-            Value::String(_) => "string",
-            Value::Number(_) => "number",
-            Value::Bool(_) => "boolean",
-            Value::Null => "null",
+fn infer_value_type(value: &jaq_json::Val) -> String {
+    match value {
+        jaq_json::Val::Obj(_) => "object",
+        jaq_json::Val::Arr(_) => "array",
+        jaq_json::Val::Str(_, _) => "string",
+        jaq_json::Val::Num(_) => "number",
+        jaq_json::Val::Bool(_) => "boolean",
+        jaq_json::Val::Null => "null",
+    }
+    .to_string()
+}
+
+fn to_jaq_value(value: &Value) -> jaq_json::Val {
+    match value {
+        Value::Null => jaq_json::Val::Null,
+        Value::Bool(value) => jaq_json::Val::Bool(*value),
+        Value::Number(value) => jaq_json::Val::Num(to_jaq_number(value)),
+        Value::String(value) => jaq_json::Val::utf8_str(value.clone()),
+        Value::Array(values) => {
+            jaq_json::Val::Arr(jaq_json::Rc::new(values.iter().map(to_jaq_value).collect()))
         }
-        .to_string();
+        Value::Object(values) => {
+            let map = values
+                .iter()
+                .map(|(key, value)| (jaq_json::Val::utf8_str(key.clone()), to_jaq_value(value)))
+                .collect();
+            jaq_json::Val::obj(map)
+        }
+    }
+}
+
+fn to_jaq_number(number: &serde_json::Number) -> jaq_json::Num {
+    if let Some(value) = number.as_i64() {
+        return jaq_json::Num::from_integral(value);
     }
 
-    "string".to_string()
+    if let Some(value) = number.as_u64() {
+        return jaq_json::Num::from_integral(value);
+    }
+
+    if let Some(value) = number.as_f64() {
+        return jaq_json::Num::Float(value);
+    }
+
+    jaq_json::Num::from_dec_str(&number.to_string())
 }
 
 #[cfg(test)]

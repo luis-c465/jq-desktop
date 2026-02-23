@@ -58,36 +58,21 @@ pub async fn run_jq_query(
     let _ = on_result.send(QueryResult::Running);
 
     let started = Instant::now();
-    let outputs = match JqEngine::execute(&query, &input) {
-        Ok(values) => values,
-        Err(error) => {
-            clear_result_store(&state)?;
-            let message = error.to_string();
-            let _ = on_result.send(QueryResult::Error {
-                message: message.clone(),
-            });
-            return Err(message);
-        }
-    };
-
     let mut emitted = 0_usize;
-    for output in outputs.into_iter().take(MAX_QUERY_RESULTS) {
+    let execution = JqEngine::execute_stream(&query, input.as_ref(), |output| {
         if state.is_query_cancelled() {
-            clear_result_store(&state)?;
-            let message = AppError::Cancelled.to_string();
-            let _ = on_result.send(QueryResult::Error {
-                message: message.clone(),
-            });
-            return Err(message);
+            return Err(AppError::Cancelled);
         }
 
         if started.elapsed() > QUERY_TIMEOUT {
-            clear_result_store(&state)?;
-            let message = format!("Query timed out after {} seconds", QUERY_TIMEOUT.as_secs());
-            let _ = on_result.send(QueryResult::Error {
-                message: message.clone(),
-            });
-            return Err(message);
+            return Err(AppError::JqRuntimeError(format!(
+                "Query timed out after {} seconds",
+                QUERY_TIMEOUT.as_secs()
+            )));
+        }
+
+        if emitted >= MAX_QUERY_RESULTS {
+            return Ok(false);
         }
 
         let _ = push_parsed_result(&state, &output.value);
@@ -100,6 +85,21 @@ pub async fn run_jq_query(
         });
 
         emitted += 1;
+        Ok(true)
+    });
+
+    if let Err(error) = execution {
+        clear_result_store(&state)?;
+        let message = match error {
+            AppError::JqRuntimeError(message) if message.starts_with("Query timed out after") => {
+                message
+            }
+            other => other.to_string(),
+        };
+        let _ = on_result.send(QueryResult::Error {
+            message: message.clone(),
+        });
+        return Err(message);
     }
 
     let _ = on_result.send(QueryResult::Complete {

@@ -3,19 +3,20 @@ use crate::tree_nav::{
     get_children_of_value, get_root_nodes_of_value, get_value_at_path as get_value_at_path_for_root,
 };
 use serde_json::Value;
+use std::sync::Arc;
 
 pub use crate::tree_nav::TreeNodeInfo;
 
 #[derive(Debug, Default)]
 pub struct JsonStore {
-    pub data: Option<Value>,
+    pub data: Option<Arc<Value>>,
     pub file_path: Option<String>,
     pub file_size: Option<u64>,
 }
 
 impl JsonStore {
     pub fn get_root_nodes(&self) -> Result<Vec<TreeNodeInfo>, AppError> {
-        let root = self.data.as_ref().ok_or(AppError::NoFileLoaded)?;
+        let root = self.data.as_deref().ok_or(AppError::NoFileLoaded)?;
         Ok(get_root_nodes_of_value(root))
     }
 
@@ -31,7 +32,7 @@ impl JsonStore {
     }
 
     pub fn get_value_at_path(&self, path: &str) -> Result<&Value, AppError> {
-        let root = self.data.as_ref().ok_or(AppError::NoFileLoaded)?;
+        let root = self.data.as_deref().ok_or(AppError::NoFileLoaded)?;
 
         get_value_at_path_for_root(root, path)
     }
@@ -47,10 +48,11 @@ impl JsonStore {
 mod tests {
     use super::JsonStore;
     use serde_json::json;
+    use std::sync::Arc;
 
     fn build_store(value: serde_json::Value) -> JsonStore {
         JsonStore {
-            data: Some(value),
+            data: Some(Arc::new(value)),
             file_path: Some("/tmp/test.json".to_string()),
             file_size: Some(12),
         }
